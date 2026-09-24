@@ -55,10 +55,16 @@ h1,h2,h3{font-family:'Poppins',sans-serif;font-weight:600;}
   font-size:22px;
   text-decoration:none;
 }
-.header .logo img{
-  height:64px;
-  width:auto;
-  display:block;
+.header .logo .simbolo{
+  width:40px;
+  height:40px;
+  background:#ffffff;
+  border-radius:10px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  color:var(--azul-header);
+  font-size:22px;
 }
 .header .acciones{
   display:flex;
@@ -101,12 +107,31 @@ h1,h2,h3{font-family:'Poppins',sans-serif;font-weight:600;}
   gap:8px;
   margin-bottom:32px;
 }
-.hero .logo-grande img{
-  max-width:420px;
-  width:100%;
-  height:auto;
-  display:block;
+.hero .logo-grande .simbolo-grande{
+  width:110px;
+  height:110px;
+  background:linear-gradient(135deg,#e8f0fc, #d4e3fb);
+  border-radius:24px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  font-size:56px;
+  color:var(--azul-header);
   margin-bottom:8px;
+}
+.hero .logo-grande .nombre{
+  font-family:'Poppins',sans-serif;
+  font-weight:700;
+  font-size:32px;
+  color:var(--azul-header);
+  letter-spacing:1px;
+}
+.hero .logo-grande .tagline{
+  font-family:'Inter',sans-serif;
+  font-size:12px;
+  color:var(--texto-secundario);
+  letter-spacing:3px;
+  text-transform:uppercase;
 }
 .hero h1{
   font-size:44px;
@@ -297,10 +322,23 @@ h1,h2,h3{font-family:'Poppins',sans-serif;font-weight:600;}
   gap:10px;
   margin-bottom:6px;
 }
-.modal-head .logo-modal img{
-  height:32px;
-  width:auto;
-  display:block;
+.modal-head .logo-modal .simbolo-modal{
+  width:38px;
+  height:38px;
+  background:var(--azul-header);
+  border-radius:9px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  color:#ffffff;
+  font-size:20px;
+}
+.modal-head .logo-modal .texto-modal{
+  font-family:'Poppins',sans-serif;
+  font-weight:700;
+  font-size:22px;
+  color:var(--azul-header);
+  letter-spacing:.5px;
 }
 .modal-tabs{
   display:flex;
@@ -361,6 +399,7 @@ h1,h2,h3{font-family:'Poppins',sans-serif;font-weight:600;}
   margin-top:6px;
 }
 .btn-modal-primario:hover{background:#1e5bbf;}
+.btn-modal-primario:disabled{opacity:.6;cursor:not-allowed;}
 .modal-link{
   display:block;
   text-align:center;
@@ -382,6 +421,17 @@ h1,h2,h3{font-family:'Poppins',sans-serif;font-weight:600;}
   color:var(--azul-boton);
   text-decoration:none;
 }
+.mensaje-error{
+  background:#fdecea;
+  border:1px solid #f3b7b0;
+  color:#a72e21;
+  border-radius:6px;
+  padding:9px 12px;
+  font-size:13px;
+  margin-bottom:14px;
+  display:none;
+}
+.mensaje-error.visible{display:block;}
 
 /* ============ BANNER COOKIES ============ */
 .cookies-banner{
@@ -442,9 +492,9 @@ h1,h2,h3{font-family:'Poppins',sans-serif;font-weight:600;}
   .hero{padding:60px 20px 70px;}
   .hero h1{font-size:32px;}
   .hero .subtitulo{font-size:16px;}
-  .hero .logo-grande img{max-width:300px;}
+  .hero .logo-grande .simbolo-grande{width:90px;height:90px;font-size:46px;}
+  .hero .logo-grande .nombre{font-size:26px;}
   .header{padding:14px 18px;}
-  .header .logo img{height:48px;}
   .btn-login{display:none;}
   .menu-drawer{width:280px;}
   .cookies-banner{padding:14px 16px;}
@@ -457,7 +507,8 @@ h1,h2,h3{font-family:'Poppins',sans-serif;font-weight:600;}
 <!-- ================= HEADER ================= -->
 <header class="header">
   <a href="/" class="logo">
-    <img src="logo.jpg" alt="SERVIX">
+    <div class="simbolo"><i class="bi bi-robot"></i></div>
+    SERVIX
   </a>
   <div class="acciones">
     <button class="btn-login" onclick="abrirModal('login')">Iniciar sesión</button>
@@ -468,7 +519,9 @@ h1,h2,h3{font-family:'Poppins',sans-serif;font-weight:600;}
 <!-- ================= HERO ================= -->
 <section class="hero">
   <div class="logo-grande">
-    <img src="logo.jpg" alt="SERVIX - Chatbot Inteligente">
+    <div class="simbolo-grande"><i class="bi bi-robot"></i></div>
+    <div class="nombre">SERVIX</div>
+    <div class="tagline">CHATBOT INTELIGENTE</div>
   </div>
 
   <h1>Chatbot inteligente para tu negocio</h1>
@@ -516,7 +569,8 @@ h1,h2,h3{font-family:'Poppins',sans-serif;font-weight:600;}
 
     <div class="modal-head">
       <div class="logo-modal">
-        <img src="logo.jpg" alt="SERVIX">
+        <div class="simbolo-modal"><i class="bi bi-robot"></i></div>
+        <div class="texto-modal">SERVIX</div>
       </div>
     </div>
 
@@ -526,39 +580,41 @@ h1,h2,h3{font-family:'Poppins',sans-serif;font-weight:600;}
     </div>
 
     <div class="modal-body">
+      <div class="mensaje-error" id="mensajeError"></div>
+
       <!-- Form Login -->
-      <form id="form-login" onsubmit="event.preventDefault();">
+      <form id="form-login" onsubmit="enviarLogin(event);">
         <div class="form-group">
           <label>Correo electrónico</label>
-          <input type="email" placeholder="tu@correo.com" required>
+          <input type="email" id="login-email" placeholder="tu@correo.com" required>
         </div>
         <div class="form-group">
           <label>Contraseña</label>
-          <input type="password" placeholder="Tu contraseña" required>
+          <input type="password" id="login-password" placeholder="Tu contraseña" required>
         </div>
-        <button type="submit" class="btn-modal-primario">ENTRAR</button>
+        <button type="submit" class="btn-modal-primario" id="btn-login">ENTRAR</button>
         <a class="modal-link" href="/recuperar">¿Olvidaste tu contraseña?</a>
       </form>
 
       <!-- Form Registro -->
-      <form id="form-registro" onsubmit="event.preventDefault();" style="display:none;">
+      <form id="form-registro" onsubmit="enviarRegistro(event);" style="display:none;">
         <div class="form-group">
           <label>Nombre completo</label>
-          <input type="text" placeholder="Juan Pérez" required>
+          <input type="text" id="reg-nombre" placeholder="Juan Pérez" required>
         </div>
         <div class="form-group">
           <label>Nombre del negocio</label>
-          <input type="text" placeholder="Mi empresa" required>
+          <input type="text" id="reg-negocio" placeholder="Mi empresa" required>
         </div>
         <div class="form-group">
           <label>Correo electrónico</label>
-          <input type="email" placeholder="tu@correo.com" required>
+          <input type="email" id="reg-email" placeholder="tu@correo.com" required>
         </div>
         <div class="form-group">
           <label>Contraseña</label>
-          <input type="password" placeholder="Mínimo 6 caracteres" required>
+          <input type="password" id="reg-password" placeholder="Mínimo 6 caracteres" required minlength="6">
         </div>
-        <button type="submit" class="btn-modal-primario">CREAR CUENTA GRATIS</button>
+        <button type="submit" class="btn-modal-primario" id="btn-registro">CREAR CUENTA GRATIS</button>
         <div class="modal-footer-texto">
           Al registrarte aceptas los <a href="/terminos">Términos de Servicio</a>
           y las <a href="/privacidad">Políticas de Privacidad</a>.
@@ -581,7 +637,16 @@ h1,h2,h3{font-family:'Poppins',sans-serif;font-weight:600;}
 </div>
 
 <script>
-// ============ MENÚ ============
+// =====================================================
+// CONFIGURACIÓN
+// =====================================================
+
+const API_URL = "https://servix-9i0u.onrender.com";
+
+// =====================================================
+// MENÚ
+// =====================================================
+
 function abrirMenu(){
   document.getElementById('menuOverlay').classList.add('open');
   document.getElementById('menuDrawer').classList.add('open');
@@ -591,13 +656,18 @@ function cerrarMenu(){
   document.getElementById('menuDrawer').classList.remove('open');
 }
 
-// ============ MODAL ============
+// =====================================================
+// MODAL
+// =====================================================
+
 function abrirModal(tab){
   document.getElementById('modalAuth').classList.add('open');
   cambiarTab(tab || 'login');
+  ocultarError();
 }
 function cerrarModal(){
   document.getElementById('modalAuth').classList.remove('open');
+  ocultarError();
 }
 function cambiarTab(tab){
   document.querySelectorAll('.modal-tab').forEach(t=>{
@@ -605,9 +675,131 @@ function cambiarTab(tab){
   });
   document.getElementById('form-login').style.display = (tab==='login') ? 'block' : 'none';
   document.getElementById('form-registro').style.display = (tab==='registro') ? 'block' : 'none';
+  ocultarError();
 }
 
-// ============ COOKIES ============
+function mostrarError(msg){
+  const el = document.getElementById('mensajeError');
+  el.textContent = msg;
+  el.classList.add('visible');
+}
+function ocultarError(){
+  document.getElementById('mensajeError').classList.remove('visible');
+}
+
+// =====================================================
+// LOGIN
+// =====================================================
+
+async function enviarLogin(e){
+  e.preventDefault();
+  ocultarError();
+
+  const email = document.getElementById('login-email').value.trim();
+  const password = document.getElementById('login-password').value;
+  const btn = document.getElementById('btn-login');
+
+  if(!email || !password){
+    mostrarError("Por favor, llena todos los campos");
+    return;
+  }
+
+  btn.disabled = true;
+  btn.textContent = "Entrando...";
+
+  try {
+    const resp = await fetch(`${API_URL}/api/login`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, password })
+    });
+
+    const data = await resp.json();
+
+    if(!resp.ok){
+      mostrarError(data.detail || "Error al iniciar sesión");
+      btn.disabled = false;
+      btn.textContent = "ENTRAR";
+      return;
+    }
+
+    // Guardar token y datos del cliente
+    localStorage.setItem('servix_token', data.token);
+    localStorage.setItem('servix_cliente', JSON.stringify(data.cliente));
+
+    // Redirigir al Portal
+    window.location.href = '/portal/index.html';
+
+  } catch(err) {
+    console.error(err);
+    mostrarError("Error de conexión con el servidor");
+    btn.disabled = false;
+    btn.textContent = "ENTRAR";
+  }
+}
+
+// =====================================================
+// REGISTRO
+// =====================================================
+
+async function enviarRegistro(e){
+  e.preventDefault();
+  ocultarError();
+
+  const nombre_completo = document.getElementById('reg-nombre').value.trim();
+  const negocio = document.getElementById('reg-negocio').value.trim();
+  const email = document.getElementById('reg-email').value.trim();
+  const password = document.getElementById('reg-password').value;
+  const btn = document.getElementById('btn-registro');
+
+  if(!nombre_completo || !negocio || !email || !password){
+    mostrarError("Por favor, llena todos los campos");
+    return;
+  }
+
+  if(password.length < 6){
+    mostrarError("La contraseña debe tener al menos 6 caracteres");
+    return;
+  }
+
+  btn.disabled = true;
+  btn.textContent = "Creando cuenta...";
+
+  try {
+    const resp = await fetch(`${API_URL}/api/registro`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ nombre_completo, negocio, email, password })
+    });
+
+    const data = await resp.json();
+
+    if(!resp.ok){
+      mostrarError(data.detail || "Error al crear la cuenta");
+      btn.disabled = false;
+      btn.textContent = "CREAR CUENTA GRATIS";
+      return;
+    }
+
+    // Guardar token y datos
+    localStorage.setItem('servix_token', data.token);
+    localStorage.setItem('servix_cliente', JSON.stringify(data.cliente));
+
+    // Redirigir al Portal
+    window.location.href = '/portal/index.html';
+
+  } catch(err) {
+    console.error(err);
+    mostrarError("Error de conexión con el servidor");
+    btn.disabled = false;
+    btn.textContent = "CREAR CUENTA GRATIS";
+  }
+}
+
+// =====================================================
+// COOKIES
+// =====================================================
+
 function mostrarCookiesSiAplica(){
   const acepto = localStorage.getItem('servix_cookies_aceptadas');
   if(!acepto){
@@ -619,7 +811,10 @@ function cerrarCookies(acepto){
   document.getElementById('cookiesBanner').classList.remove('visible');
 }
 
-// ============ ESC ============
+// =====================================================
+// ESC
+// =====================================================
+
 document.addEventListener('keydown', (e)=>{
   if(e.key==='Escape'){
     cerrarModal();
@@ -627,7 +822,10 @@ document.addEventListener('keydown', (e)=>{
   }
 });
 
-// ============ INICIALIZAR ============
+// =====================================================
+// INICIALIZAR
+// =====================================================
+
 mostrarCookiesSiAplica();
 </script>
 
