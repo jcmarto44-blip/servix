@@ -2,7 +2,7 @@
 SERVIX - Backend principal
 Plataforma de chatbots inteligentes para negocios
 
-Endpoints:
+Endpoints cliente:
 - POST   /api/registro              Registrar nuevo cliente
 - POST   /api/login                 Iniciar sesión
 - GET    /api/me                    Datos del cliente logueado
@@ -16,6 +16,13 @@ Endpoints:
 - POST   /api/reglas                Crear regla
 - PUT    /api/reglas/{id}           Editar regla
 - DELETE /api/reglas/{id}           Eliminar regla
+
+Endpoints admin:
+- GET    /api/admin/clientes              Listar todos los clientes
+- GET    /api/admin/clientes/{id}         Ver detalle de un cliente
+- PUT    /api/admin/clientes/{id}/estado  Activar/suspender cliente
+
+Endpoints públicos:
 - GET    /api/widget/{token}        Config del widget (público)
 - POST   /api/chat/{token}          Recibir mensaje del widget (público)
 """
@@ -107,6 +114,10 @@ def limpiar_html(texto: str) -> str:
         return ""
     return re.sub(r'<[^>]*>', '', str(texto))
 
+def verificar_admin(cliente: dict) -> bool:
+    """Verifica si el cliente es administrador."""
+    return cliente.get('email') == 'admin@servix.com'
+
 # =====================================================
 # AUTENTICACIÓN - Cliente actual
 # =====================================================
@@ -183,6 +194,9 @@ class ReglaUpdate(BaseModel):
 class MensajeChat(BaseModel):
     mensaje: str
     sesion_id: Optional[str] = None
+
+class EstadoUpdate(BaseModel):
+    activo: bool
 
 # =====================================================
 # RAÍZ Y HEALTH
@@ -712,6 +726,124 @@ def eliminar_regla(regla_id: int, cliente = Depends(get_current_cliente)):
             conn.close()
 
 # =====================================================
+# ADMIN - GESTIÓN DE CLIENTES
+# =====================================================
+
+@app.get("/api/admin/clientes")
+def admin_listar_clientes(cliente = Depends(get_current_cliente)):
+    """Lista TODOS los clientes (solo admin)."""
+    if not verificar_admin(cliente):
+        raise HTTPException(status_code=403, detail="Acceso denegado. Se requiere ser administrador.")
+
+    conn = None
+    try:
+        conn = get_connection()
+        cursor = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+
+        cursor.execute("""
+            SELECT 
+                c.id, c.email, c.nombre_completo, c.negocio, c.telefono,
+                c.plan, c.estado, c.fecha_registro, c.fecha_fin_prueba,
+                c.proximo_pago, c.activo,
+                (SELECT COUNT(*) FROM chatbots WHERE cliente_id = c.id) as total_chatbots
+            FROM clientes c
+            WHERE c.email != 'admin@servix.com'
+            ORDER BY c.fecha_registro DESC
+        """)
+        clientes = cursor.fetchall()
+
+        # Convertir fechas a string
+        for cl in clientes:
+            if cl['fecha_registro']:
+                cl['fecha_registro'] = cl['fecha_registro'].isoformat()
+            if cl['fecha_fin_prueba']:
+                cl['fecha_fin_prueba'] = cl['fecha_fin_prueba'].isoformat()
+            if cl['proximo_pago']:
+                cl['proximo_pago'] = cl['proximo_pago'].isoformat()
+            cl['total_chatbots'] = cl['total_chatbots'] or 0
+
+        return {"success": True, "clientes": [dict(c) for c in clientes]}
+    finally:
+        if conn:
+            conn.close()
+
+@app.get("/api/admin/clientes/{cliente_id}")
+def admin_obtener_cliente(cliente_id: int, cliente = Depends(get_current_cliente)):
+    """Obtiene el detalle de un cliente específico (solo admin)."""
+    if not verificar_admin(cliente):
+        raise HTTPException(status_code=403, detail="Acceso denegado. Se requiere ser administrador.")
+
+    conn = None
+    try:
+        conn = get_connection()
+        cursor = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+
+        cursor.execute("""
+            SELECT 
+                c.id, c.email, c.nombre_completo, c.negocio, c.telefono,
+                c.plan, c.estado, c.fecha_registro, c.fecha_fin_prueba,
+                c.proximo_pago, c.activo,
+                (SELECT COUNT(*) FROM chatbots WHERE cliente_id = c.id) as total_chatbots
+            FROM clientes c
+            WHERE c.id = %s
+        """, (cliente_id,))
+
+        cl = cursor.fetchone()
+        if not cl:
+            raise HTTPException(status_code=404, detail="Cliente no encontrado")
+
+        if cl['fecha_registro']:
+            cl['fecha_registro'] = cl['fecha_registro'].isoformat()
+        if cl['fecha_fin_prueba']:
+            cl['fecha_fin_prueba'] = cl['fecha_fin_prueba'].isoformat()
+        if cl['proximo_pago']:
+            cl['proximo_pago'] = cl['proximo_pago'].isoformat()
+        cl['total_chatbots'] = cl['total_chatbots'] or 0
+
+        return {"success": True, "cliente": dict(cl)}
+    finally:
+        if conn:
+            conn.close()
+
+@app.put("/api/admin/clientes/{cliente_id}/estado")
+def admin_cambiar_estado(cliente_id: int, data: EstadoUpdate, cliente = Depends(get_current_cliente)):
+    """Activa o suspende un cliente (solo admin)."""
+    if not verificar_admin(cliente):
+        raise HTTPException(status_code=403, detail="Acceso denegado. Se requiere ser administrador.")
+
+    conn = None
+    try:
+        conn = get_connection()
+        cursor = conn.cursor()
+
+        # Verificar que el cliente existe y no es el admin
+        cursor.execute("SELECT email FROM clientes WHERE id = %s", (cliente_id,))
+        row = cursor.fetchone()
+        if not row:
+            raise HTTPException(status_code=404, detail="Cliente no encontrado")
+
+        if row[0] == 'admin@servix.com':
+            raise HTTPException(status_code=400, detail="No puedes cambiar el estado del administrador")
+
+        nuevo_estado = 'activo' if data.activo else 'suspendido'
+
+        cursor.execute("""
+            UPDATE clientes
+            SET activo = %s, estado = %s
+            WHERE id = %s
+        """, (data.activo, nuevo_estado, cliente_id))
+        conn.commit()
+
+        return {
+            "success": True,
+            "mensaje": f"Cliente {'activado' if data.activo else 'suspendido'} correctamente",
+            "estado": nuevo_estado
+        }
+    finally:
+        if conn:
+            conn.close()
+
+# =====================================================
 # WIDGET Y CHAT
 # =====================================================
 
@@ -756,6 +888,12 @@ def chat(token: str, data: MensajeChat, request: Request):
 
         if not chatbot['activo']:
             raise HTTPException(status_code=403, detail="Este chatbot está desactivado")
+
+        # Verificar que el cliente dueño del chatbot esté activo
+        cursor.execute("SELECT activo, estado FROM clientes WHERE id = %s", (chatbot['cliente_id'],))
+        dueno = cursor.fetchone()
+        if dueno and not dueno['activo']:
+            raise HTTPException(status_code=403, detail="Este chatbot no está disponible temporalmente")
 
         mensaje = data.mensaje.strip()
         if not mensaje or len(mensaje) > 500:
