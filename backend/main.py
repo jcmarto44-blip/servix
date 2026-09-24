@@ -5,7 +5,7 @@ Plataforma de chatbots inteligentes para negocios
 
 from fastapi import FastAPI, HTTPException, Header, Depends, Request
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, Response
 from typing import Optional, List
 from pydantic import BaseModel
 from datetime import datetime, timedelta
@@ -23,21 +23,16 @@ import requests
 # CONFIGURACIÓN INICIAL
 # =====================================================
 
-app = FastAPI(title="SERVIX API", version="1.0.0")
+app = FastAPI(title="SERVIX API", version="1.0.1")
 
-ALLOWED_ORIGINS = [
-    "http://localhost:5500",
-    "http://localhost:3000",
-    "http://127.0.0.1:5500",
-    "https://servix-one.vercel.app",
-    "https://servix.vercel.app",
-    "https://servix.com",
-]
-
+# NOTA: el widget de chat debe poder llamar a esta API desde CUALQUIER
+# dominio (la web de cada cliente), así que dejamos el origen abierto.
+# Como no usamos cookies (solo Bearer token), allow_credentials=False
+# es seguro y compatible con allow_origins="*".
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=ALLOWED_ORIGINS,
-    allow_credentials=True,
+    allow_origins=["*"],
+    allow_credentials=False,
     allow_methods=["*"],
     allow_headers=["*"],
 )
@@ -49,6 +44,11 @@ SUPABASE_PUBLISHABLE_KEY = (os.getenv("SUPABASE_PUBLISHABLE_KEY") or "").strip()
 SUPABASE_SERVICE_KEY = (os.getenv("SUPABASE_SERVICE_KEY") or "").strip()
 GEMINI_API_KEY = (os.getenv("GEMINI_API_KEY") or "").strip()
 DATABASE_URL = (os.getenv("DATABASE_URL") or "").strip()
+
+# URL pública de esta misma API, usada dentro del widget.js generado.
+# Si cambias de dominio/host, actualiza esta constante (o ponla en
+# una variable de entorno API_PUBLIC_URL).
+API_PUBLIC_URL = (os.getenv("API_PUBLIC_URL") or "https://servix-9i0u.onrender.com").strip().rstrip("/")
 
 # =====================================================
 # CONEXIÓN A BASE DE DATOS
@@ -188,7 +188,7 @@ class MiCuentaUpdate(BaseModel):
 
 @app.get("/")
 def inicio():
-    return {"mensaje": "SERVIX API funcionando", "version": "1.0.0", "estado": "ok"}
+    return {"mensaje": "SERVIX API funcionando", "version": "1.0.1", "estado": "ok"}
 
 @app.get("/health")
 def health():
@@ -1070,6 +1070,157 @@ def obtener_widget(token: str):
     finally:
         if conn:
             conn.close()
+
+# ---- ESTE ES EL ENDPOINT NUEVO: sirve el widget.js embebible ----
+# El portal-cliente.html genera: <script src="{API_URL}/widget/{token}.js"></script>
+# Esta ruta genera ese archivo JS al vuelo, ya con el token y la URL
+# de la API incrustados, y lo manda con el content-type correcto.
+
+WIDGET_JS_TEMPLATE = r"""
+(function () {
+  var TOKEN = "__TOKEN__";
+  var API_URL = "__API_URL__";
+  var config = null;
+  var sessionId = null;
+  var isOpen = false;
+
+  function el(tag, styleText, html) {
+    var e = document.createElement(tag);
+    if (styleText) e.style.cssText = styleText;
+    if (html !== undefined) e.innerHTML = html;
+    return e;
+  }
+
+  function init() {
+    fetch(API_URL + "/api/widget/" + TOKEN)
+      .then(function (r) { return r.json(); })
+      .then(function (cfg) {
+        config = cfg;
+        if (config.activo === false) return;
+        buildWidget();
+      })
+      .catch(function (e) { console.error("SERVIX widget:", e); });
+  }
+
+  function buildWidget() {
+    var side = config.posicion === "izquierda" ? "left" : "right";
+    var primario = config.color_primario || "#2e6fd9";
+    var texto = config.color_texto || "#ffffff";
+
+    var bubble = el("div",
+      "position:fixed;bottom:20px;" + side + ":20px;width:60px;height:60px;" +
+      "border-radius:50%;background:" + primario + ";box-shadow:0 4px 16px rgba(0,0,0,.25);" +
+      "display:flex;align-items:center;justify-content:center;cursor:pointer;z-index:999999;" +
+      "transition:transform .2s;",
+      '<svg width="26" height="26" viewBox="0 0 24 24" fill="' + texto + '">' +
+      '<path d="M12 2C6.48 2 2 6.03 2 11c0 2.4 1.05 4.57 2.77 6.15L4 22l5.05-1.35C10 20.86 11 21 12 21c5.52 0 10-4.03 10-9s-4.48-10-10-10z"/></svg>'
+    );
+    bubble.id = "servix-bubble";
+
+    var win = el("div",
+      "position:fixed;bottom:92px;" + side + ":20px;width:340px;max-width:92vw;" +
+      "height:460px;max-height:70vh;background:#fff;border-radius:14px;" +
+      "box-shadow:0 8px 32px rgba(0,0,0,.25);display:none;flex-direction:column;" +
+      "overflow:hidden;z-index:999999;font-family:Arial,Helvetica,sans-serif;"
+    );
+    win.id = "servix-window";
+
+    var header = el("div",
+      "background:" + primario + ";color:" + texto + ";padding:14px 16px;font-weight:bold;font-size:15px;",
+      (config.nombre || "Chat")
+    );
+
+    var body = el("div",
+      "flex:1;overflow-y:auto;padding:12px;background:#f7f8fa;display:flex;flex-direction:column;"
+    );
+    body.id = "servix-body";
+
+    var inputWrap = el("div", "display:flex;border-top:1px solid #e5e7eb;padding:8px;gap:6px;background:#fff;");
+    var input = document.createElement("input");
+    input.type = "text";
+    input.placeholder = "Escribe tu mensaje...";
+    input.style.cssText = "flex:1;border:1px solid #d3d8de;border-radius:8px;padding:9px 10px;font-size:14px;outline:none;";
+
+    var sendBtn = el("button",
+      "background:" + primario + ";color:" + texto + ";border:none;border-radius:8px;padding:0 16px;cursor:pointer;font-weight:bold;font-size:16px;",
+      "&#10148;"
+    );
+
+    inputWrap.appendChild(input);
+    inputWrap.appendChild(sendBtn);
+    win.appendChild(header);
+    win.appendChild(body);
+    win.appendChild(inputWrap);
+
+    document.body.appendChild(bubble);
+    document.body.appendChild(win);
+
+    addMessage(config.mensaje_bienvenida || "\u00a1Hola! \u00bfEn qu\u00e9 te ayudo?", "bot");
+
+    bubble.onclick = function () {
+      isOpen = !isOpen;
+      win.style.display = isOpen ? "flex" : "none";
+      if (isOpen) input.focus();
+    };
+
+    function addMessage(text, from) {
+      var isBot = from === "bot";
+      var msg = document.createElement("div");
+      msg.style.cssText =
+        "max-width:78%;margin-bottom:10px;padding:9px 12px;border-radius:12px;" +
+        "font-size:14px;line-height:1.4;word-wrap:break-word;" +
+        (isBot
+          ? "background:#fff;color:#1e2733;border:1px solid #e5e7eb;align-self:flex-start;"
+          : "background:" + primario + ";color:" + texto + ";align-self:flex-end;");
+      msg.textContent = text;
+      body.appendChild(msg);
+      body.scrollTop = body.scrollHeight;
+    }
+
+    function send() {
+      var texto2 = input.value.trim();
+      if (!texto2) return;
+      addMessage(texto2, "user");
+      input.value = "";
+      input.disabled = true;
+
+      fetch(API_URL + "/api/chat/" + TOKEN, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ mensaje: texto2, sesion_id: sessionId })
+      })
+        .then(function (r) { return r.json(); })
+        .then(function (data) {
+          sessionId = data.sesion_id;
+          addMessage(data.respuesta || "...", "bot");
+        })
+        .catch(function () {
+          addMessage("Error de conexi\u00f3n. Intenta de nuevo.", "bot");
+        })
+        .finally(function () {
+          input.disabled = false;
+          input.focus();
+        });
+    }
+
+    sendBtn.onclick = send;
+    input.addEventListener("keydown", function (e) {
+      if (e.key === "Enter") send();
+    });
+  }
+
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", init);
+  } else {
+    init();
+  }
+})();
+"""
+
+@app.get("/widget/{token}.js")
+def widget_js(token: str):
+    contenido = WIDGET_JS_TEMPLATE.replace("__TOKEN__", token).replace("__API_URL__", API_PUBLIC_URL)
+    return Response(content=contenido, media_type="application/javascript")
 
 @app.post("/api/chat/{token}")
 def chat(token: str, data: MensajeChat, request: Request):
