@@ -1,0 +1,1139 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SERVIX — Portal Cliente</title>
+
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Poppins:wght@500;600;700&display=swap" rel="stylesheet">
+
+<style>
+:root{
+  --azul-header:#1b4b8f;
+  --azul-boton:#2e6fd9;
+  --verde:#2e9e5b;
+  --amarillo:#f5a623;
+  --rojo:#dc3545;
+  --gris-bg:#f7f8fa;
+  --gris-borde:#e5e7eb;
+  --gris-icono:#5b6773;
+  --texto-oscuro:#1e2733;
+  --texto-secundario:#5b6773;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+html,body{height:100%;}
+body{
+  font-family:'Inter',sans-serif;
+  background:var(--gris-bg);
+  color:var(--texto-oscuro);
+  font-size:14px;
+}
+h1,h2,h3,h4{font-family:'Poppins',sans-serif;font-weight:600;}
+
+.header{
+  background:var(--azul-header);
+  padding:14px 24px;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  box-shadow:0 2px 8px rgba(0,0,0,.08);
+  position:sticky;
+  top:0;
+  z-index:100;
+  color:#fff;
+}
+.header .logo{
+  display:flex;
+  align-items:center;
+  gap:10px;
+  color:#fff;
+  text-decoration:none;
+  font-family:'Poppins',sans-serif;
+  font-weight:600;
+  font-size:18px;
+}
+.header .logo img{
+  width:36px;
+  height:36px;
+  object-fit:contain;
+  background:#fff;
+  border-radius:8px;
+  padding:2px;
+}
+.header .info-cliente{
+  display:flex;
+  align-items:center;
+  gap:16px;
+  font-size:13.5px;
+}
+.header .badge-estado{
+  display:inline-flex;
+  align-items:center;
+  gap:6px;
+  padding:6px 14px;
+  border-radius:20px;
+  font-weight:600;
+  font-size:12px;
+  color:#fff;
+}
+.badge-prueba{background:var(--amarillo);}
+.badge-activo{background:var(--azul-boton);}
+.badge-suspendido{background:var(--rojo);}
+.badge-cancelado{background:#6c757d;}
+.btn-salir{
+  background:transparent;
+  border:1.5px solid rgba(255,255,255,.5);
+  color:#fff;
+  padding:7px 16px;
+  border-radius:6px;
+  cursor:pointer;
+  font-size:13px;
+  font-weight:600;
+  transition:all .2s;
+}
+.btn-salir:hover{background:rgba(255,255,255,.15);}
+
+.app-shell{display:flex;min-height:calc(100vh - 64px);}
+
+.sidebar{
+  width:240px;
+  background:#ffffff;
+  border-right:1px solid var(--gris-borde);
+  padding:16px 0;
+  flex-shrink:0;
+}
+.sidebar .menu-item{
+  display:flex;
+  align-items:center;
+  gap:12px;
+  padding:11px 20px;
+  color:var(--texto-oscuro);
+  font-size:14px;
+  cursor:pointer;
+  border-left:3px solid transparent;
+  transition:all .15s;
+  user-select:none;
+}
+.sidebar .menu-item:hover{background:var(--gris-bg);}
+.sidebar .menu-item.active{
+  background:#eef4fb;
+  border-left-color:var(--azul-header);
+  color:var(--azul-header);
+  font-weight:600;
+}
+.sidebar .menu-item i{
+  font-size:17px;
+  color:var(--gris-icono);
+  width:20px;
+  text-align:center;
+}
+.sidebar .menu-item.active i{color:var(--azul-header);}
+.sidebar .menu-sep{
+  height:1px;
+  background:var(--gris-borde);
+  margin:10px 20px;
+}
+
+.contenido{
+  flex:1;
+  padding:24px 32px;
+  overflow-y:auto;
+}
+.page-title{
+  font-size:22px;
+  margin-bottom:6px;
+  color:var(--texto-oscuro);
+}
+.page-sub{
+  color:var(--texto-secundario);
+  font-size:14px;
+  margin-bottom:24px;
+}
+.seccion{display:none;}
+.seccion.activa{display:block;}
+
+.card{
+  background:#fff;
+  border:1px solid var(--gris-borde);
+  border-radius:10px;
+  padding:20px 24px;
+  margin-bottom:16px;
+}
+.card-title{
+  font-size:15px;
+  font-weight:600;
+  margin-bottom:12px;
+  color:var(--texto-oscuro);
+}
+.grid-2{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:16px;
+}
+.grid-3{
+  display:grid;
+  grid-template-columns:repeat(3,1fr);
+  gap:16px;
+}
+.dato{
+  display:flex;
+  flex-direction:column;
+  gap:4px;
+}
+.dato .label{
+  font-size:12px;
+  color:var(--texto-secundario);
+  text-transform:uppercase;
+  letter-spacing:.5px;
+  font-weight:600;
+}
+.dato .valor{
+  font-size:22px;
+  font-weight:700;
+  color:var(--texto-oscuro);
+}
+
+.btn{
+  padding:9px 18px;
+  border-radius:8px;
+  font-size:13.5px;
+  font-weight:600;
+  cursor:pointer;
+  border:none;
+  transition:all .2s;
+  display:inline-flex;
+  align-items:center;
+  gap:8px;
+}
+.btn-primario{background:var(--azul-boton);color:#fff;}
+.btn-primario:hover{background:#1e5bbf;}
+.btn-secundario{background:#fff;color:var(--texto-oscuro);border:1px solid var(--gris-borde);}
+.btn-secundario:hover{background:var(--gris-bg);}
+.btn-peligro{background:var(--rojo);color:#fff;}
+.btn-peligro:hover{background:#b02a37;}
+.btn-chico{padding:6px 12px;font-size:12.5px;}
+
+.planes-grid{
+  display:grid;
+  grid-template-columns:repeat(3,1fr);
+  gap:16px;
+  margin-top:16px;
+}
+.plan-card{
+  background:#fff;
+  border:2px solid var(--gris-borde);
+  border-radius:12px;
+  padding:24px 20px;
+  text-align:center;
+  transition:all .2s;
+}
+.plan-card.popular{
+  border-color:var(--azul-boton);
+  position:relative;
+}
+.plan-card.popular::before{
+  content:"POPULAR";
+  position:absolute;
+  top:-12px;
+  left:50%;
+  transform:translateX(-50%);
+  background:var(--azul-boton);
+  color:#fff;
+  font-size:11px;
+  font-weight:700;
+  padding:3px 12px;
+  border-radius:10px;
+  letter-spacing:.5px;
+}
+.plan-card h3{
+  font-size:18px;
+  margin-bottom:8px;
+  color:var(--texto-oscuro);
+}
+.plan-card .precio{
+  font-size:32px;
+  font-weight:700;
+  color:var(--azul-header);
+  margin:12px 0 4px;
+}
+.plan-card .periodo{
+  font-size:12px;
+  color:var(--texto-secundario);
+  margin-bottom:16px;
+}
+.plan-card ul{
+  list-style:none;
+  text-align:left;
+  margin:16px 0;
+  font-size:13px;
+  color:var(--texto-secundario);
+}
+.plan-card ul li{
+  padding:5px 0;
+  border-bottom:1px solid var(--gris-borde);
+}
+.plan-card ul li:last-child{border:none;}
+
+.tabla-wrap{
+  background:#fff;
+  border:1px solid var(--gris-borde);
+  border-radius:10px;
+  overflow:hidden;
+}
+table.tabla{
+  width:100%;
+  border-collapse:collapse;
+  font-size:13.5px;
+}
+table.tabla thead th{
+  background:var(--gris-bg);
+  padding:12px 16px;
+  text-align:left;
+  font-weight:600;
+  color:var(--texto-secundario);
+  font-size:12px;
+  text-transform:uppercase;
+  letter-spacing:.5px;
+  border-bottom:1px solid var(--gris-borde);
+}
+table.tabla tbody td{
+  padding:14px 16px;
+  border-bottom:1px solid var(--gris-borde);
+  color:var(--texto-oscuro);
+}
+table.tabla tbody tr:last-child td{border-bottom:none;}
+table.tabla tbody tr:hover{background:var(--gris-bg);}
+
+.codigo-box{
+  background:#1e2733;
+  color:#7ee787;
+  padding:18px 20px;
+  border-radius:10px;
+  font-family:'Courier New',monospace;
+  font-size:13px;
+  overflow-x:auto;
+  word-break:break-all;
+  margin:12px 0;
+}
+
+.modal-overlay{
+  position:fixed;
+  inset:0;
+  background:rgba(15,20,30,.6);
+  display:none;
+  align-items:center;
+  justify-content:center;
+  z-index:200;
+  padding:20px;
+}
+.modal-overlay.open{display:flex;}
+.modal-box{
+  background:#fff;
+  border-radius:12px;
+  width:100%;
+  max-width:500px;
+  box-shadow:0 20px 60px rgba(0,0,0,.3);
+  overflow:hidden;
+}
+.modal-head{
+  padding:20px 24px;
+  border-bottom:1px solid var(--gris-borde);
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+}
+.modal-head h3{font-size:16px;}
+.modal-head .cerrar{
+  background:transparent;
+  border:none;
+  font-size:22px;
+  color:#9aa4b0;
+  cursor:pointer;
+}
+.modal-body{padding:20px 24px;}
+.modal-foot{
+  padding:16px 24px;
+  border-top:1px solid var(--gris-borde);
+  display:flex;
+  justify-content:flex-end;
+  gap:10px;
+}
+.form-group{margin-bottom:16px;}
+.form-group label{
+  display:block;
+  font-size:13px;
+  font-weight:600;
+  margin-bottom:6px;
+}
+.form-group input,
+.form-group select,
+.form-group textarea{
+  width:100%;
+  padding:10px 12px;
+  border:1.5px solid var(--gris-borde);
+  border-radius:8px;
+  font-size:14px;
+  font-family:'Inter',sans-serif;
+}
+.form-group input:focus,
+.form-group select:focus,
+.form-group textarea:focus{
+  outline:none;
+  border-color:var(--azul-boton);
+}
+.mensaje-error{
+  background:#fdecea;
+  border:1px solid #f3b7b0;
+  color:#a72e21;
+  padding:10px 14px;
+  border-radius:6px;
+  font-size:13px;
+  margin-bottom:14px;
+  display:none;
+}
+.mensaje-error.visible{display:block;}
+
+@media(max-width:768px){
+  .sidebar{
+    position:fixed;
+    left:-240px;
+    height:100vh;
+    z-index:150;
+    transition:left .3s;
+  }
+  .sidebar.open{left:0;}
+  .app-shell{position:relative;}
+  .contenido{padding:16px;}
+  .grid-2,.grid-3,.planes-grid{grid-template-columns:1fr;}
+}
+</style>
+</head>
+<body>
+
+<header class="header">
+  <a href="#" class="logo">
+    <img src="/logo.jpg" alt="SERVIX">
+    SERVIX
+  </a>
+  <div class="info-cliente">
+    <span>Cuenta: <b id="header-nombre">—</b></span>
+    <span class="badge-estado badge-prueba" id="header-badge">✅ —</span>
+    <button class="btn-salir" onclick="cerrarSesion()">Salir</button>
+  </div>
+</header>
+
+<div class="app-shell">
+
+  <aside class="sidebar" id="sidebar">
+    <div class="menu-item active" data-seccion="inicio" onclick="navegarA('inicio')">
+      <i class="bi bi-house"></i> Inicio
+    </div>
+    <div class="menu-item" data-seccion="chatbots" onclick="navegarA('chatbots')">
+      <i class="bi bi-robot"></i> Chatbots
+    </div>
+    <div class="menu-item" data-seccion="reglas" onclick="navegarA('reglas')">
+      <i class="bi bi-list-check"></i> Reglas
+    </div>
+    <div class="menu-item" data-seccion="conversaciones" onclick="navegarA('conversaciones')">
+      <i class="bi bi-chat-dots"></i> Conversaciones
+    </div>
+    <div class="menu-item" data-seccion="instalar" onclick="navegarA('instalar')">
+      <i class="bi bi-code-square"></i> Instalar
+    </div>
+    <div class="menu-item" data-seccion="cuenta" onclick="navegarA('cuenta')">
+      <i class="bi bi-person"></i> Cuenta
+    </div>
+    <div class="menu-sep"></div>
+    <div class="menu-item" onclick="cerrarSesion()">
+      <i class="bi bi-box-arrow-right"></i> Salir
+    </div>
+  </aside>
+
+  <main class="contenido">
+
+    <section class="seccion activa" id="seccion-inicio">
+      <h1 class="page-title" id="inicio-titulo">Hola</h1>
+      <p class="page-sub" id="inicio-sub">Cargando...</p>
+
+      <div id="inicio-prueba" style="display:none;">
+        <div class="card" style="background:#fff8e6;border-color:#ffd880;">
+          <h3 class="card-title">🟡 Estás en prueba gratuita</h3>
+          <p style="color:var(--texto-secundario);">Te quedan <b id="dias-restantes">7</b> días. Elige un plan para seguir usando SERVIX:</p>
+        </div>
+
+        <div class="planes-grid">
+          <div class="plan-card">
+            <h3>Starter</h3>
+            <div class="precio">$240</div>
+            <div class="periodo">USD / trimestre</div>
+            <ul>
+              <li>1 chatbot</li>
+              <li>2,000 conversaciones</li>
+              <li>Modo Reglas</li>
+            </ul>
+            <button class="btn btn-primario" style="width:100%;justify-content:center;" onclick="contratarPlan('starter')">Elegir Starter</button>
+          </div>
+
+          <div class="plan-card popular">
+            <h3>Pro</h3>
+            <div class="precio">$480</div>
+            <div class="periodo">USD / trimestre</div>
+            <ul>
+              <li>3 chatbots</li>
+              <li>10,000 conversaciones</li>
+              <li>Modo Mixto (Reglas + IA)</li>
+            </ul>
+            <button class="btn btn-primario" style="width:100%;justify-content:center;" onclick="contratarPlan('pro')">Elegir Pro</button>
+          </div>
+
+          <div class="plan-card">
+            <h3>Business</h3>
+            <div class="precio">$960</div>
+            <div class="periodo">USD / trimestre</div>
+            <ul>
+              <li>10 chatbots</li>
+              <li>Conversaciones ilimitadas</li>
+              <li>Modo IA + WhatsApp</li>
+            </ul>
+            <button class="btn btn-primario" style="width:100%;justify-content:center;" onclick="contratarPlan('business')">Elegir Business</button>
+          </div>
+        </div>
+      </div>
+
+      <div id="inicio-activo" style="display:none;">
+        <div class="grid-3">
+          <div class="card">
+            <div class="dato">
+              <span class="label">Plan actual</span>
+              <span class="valor" id="dato-plan">Pro</span>
+            </div>
+          </div>
+          <div class="card">
+            <div class="dato">
+              <span class="label">Conversaciones</span>
+              <span class="valor" id="dato-conv">0 / 0</span>
+            </div>
+          </div>
+          <div class="card">
+            <div class="dato">
+              <span class="label">Chatbots</span>
+              <span class="valor" id="dato-chatbots">0 / 0</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <h3 class="card-title">Accesos rápidos</h3>
+          <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:12px;">
+            <button class="btn btn-primario" onclick="navegarA('chatbots')">
+              <i class="bi bi-robot"></i> Configurar chatbot
+            </button>
+            <button class="btn btn-secundario" onclick="navegarA('conversaciones')">
+              <i class="bi bi-chat-dots"></i> Ver conversaciones
+            </button>
+            <button class="btn btn-secundario" onclick="navegarA('instalar')">
+              <i class="bi bi-code-square"></i> Código para mi web
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div id="inicio-suspendido" style="display:none;">
+        <div class="card" style="background:#fdecea;border-color:#f3b7b0;">
+          <h3 class="card-title" style="color:#a72e21;">⚠️ Tu cuenta está suspendida</h3>
+          <p style="color:#a72e21;">Motivo: Pago pendiente.</p>
+          <p style="color:var(--texto-secundario);margin-top:8px;">Tu chatbot ya no está funcionando en tu web.</p>
+          <div style="margin-top:16px;">
+            <button class="btn btn-primario" onclick="contactarSoporte()">💰 Pagar ahora</button>
+            <button class="btn btn-secundario" onclick="contactarSoporte()">📞 Contactar soporte</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="seccion" id="seccion-chatbots">
+      <h1 class="page-title">Mis Chatbots</h1>
+      <p class="page-sub">Administra tus chatbots y su configuración.</p>
+
+      <button class="btn btn-primario" onclick="abrirModalChatbot()" style="margin-bottom:16px;">
+        <i class="bi bi-plus-lg"></i> Crear nuevo chatbot
+      </button>
+
+      <div id="lista-chatbots"></div>
+    </section>
+
+    <section class="seccion" id="seccion-reglas">
+      <h1 class="page-title">Reglas del Chatbot</h1>
+      <p class="page-sub">Enseña a tu chatbot qué responder.</p>
+
+      <div class="form-group" style="max-width:400px;">
+        <label>Selecciona un chatbot:</label>
+        <select id="select-chatbot-reglas" onchange="cargarReglas()"></select>
+      </div>
+
+      <button class="btn btn-primario" onclick="abrirModalRegla()" style="margin-bottom:16px;" id="btn-nueva-regla" disabled>
+        <i class="bi bi-plus-lg"></i> Agregar regla
+      </button>
+
+      <div id="lista-reglas"></div>
+    </section>
+
+    <section class="seccion" id="seccion-conversaciones">
+      <h1 class="page-title">Conversaciones</h1>
+      <p class="page-sub">Historial de mensajes de tus visitantes.</p>
+
+      <div class="card">
+        <p style="color:var(--texto-secundario);">Las conversaciones aparecerán aquí cuando tus visitantes empiecen a chatear con el bot.</p>
+      </div>
+    </section>
+
+    <section class="seccion" id="seccion-instalar">
+      <h1 class="page-title">Instalar en tu web</h1>
+      <p class="page-sub">Pega este código antes de &lt;/body&gt; en tu página web.</p>
+
+      <div class="form-group" style="max-width:400px;">
+        <label>Selecciona un chatbot:</label>
+        <select id="select-chatbot-instalar" onchange="mostrarCodigoInstalar()"></select>
+      </div>
+
+      <div id="codigo-instalar-container" style="display:none;">
+        <div class="card">
+          <h3 class="card-title">Código de instalación</h3>
+          <div class="codigo-box" id="codigo-instalar"></div>
+          <button class="btn btn-primario" onclick="copiarCodigo()">
+            <i class="bi bi-clipboard"></i> Copiar código
+          </button>
+        </div>
+
+        <div class="card">
+          <h3 class="card-title">Instrucciones</h3>
+          <ol style="padding-left:20px;line-height:1.9;color:var(--texto-secundario);">
+            <li>Copia el código de arriba.</li>
+            <li>Abre el HTML de tu web.</li>
+            <li>Pega el código justo antes de &lt;/body&gt;.</li>
+            <li>Guarda y actualiza tu web.</li>
+            <li>¡Listo! Tu chatbot ya está funcionando.</li>
+          </ol>
+        </div>
+      </div>
+    </section>
+
+    <section class="seccion" id="seccion-cuenta">
+      <h1 class="page-title">Mi Cuenta</h1>
+      <p class="page-sub">Datos personales y de facturación.</p>
+
+      <div class="card">
+        <h3 class="card-title">Datos personales</h3>
+        <div class="grid-2">
+          <div class="form-group">
+            <label>Nombre completo</label>
+            <input type="text" id="cuenta-nombre" readonly>
+          </div>
+          <div class="form-group">
+            <label>Negocio</label>
+            <input type="text" id="cuenta-negocio" readonly>
+          </div>
+          <div class="form-group">
+            <label>Email</label>
+            <input type="email" id="cuenta-email" readonly>
+          </div>
+          <div class="form-group">
+            <label>Estado</label>
+            <input type="text" id="cuenta-estado" readonly>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3 class="card-title">Plan y facturación</h3>
+        <div class="grid-2">
+          <div class="form-group">
+            <label>Plan actual</label>
+            <input type="text" id="cuenta-plan" readonly>
+          </div>
+          <div class="form-group">
+            <label>Próximo pago</label>
+            <input type="text" id="cuenta-pago" readonly>
+          </div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+</div>
+
+<div class="modal-overlay" id="modal-chatbot" onclick="if(event.target===this)cerrarModalChatbot()">
+  <div class="modal-box">
+    <div class="modal-head">
+      <h3>Crear nuevo chatbot</h3>
+      <button class="cerrar" onclick="cerrarModalChatbot()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="mensaje-error" id="modal-chatbot-error"></div>
+      <div class="form-group">
+        <label>Nombre del chatbot</label>
+        <input type="text" id="chatbot-nombre" placeholder="Ej: Mi asistente" required>
+      </div>
+      <div class="form-group">
+        <label>Modo del bot</label>
+        <select id="chatbot-modo">
+          <option value="reglas">🅰️ Reglas (responde solo lo que le enseño)</option>
+          <option value="ia">🅱️ Solo IA (responde cualquier cosa)</option>
+          <option value="mixto">🅲 Mixto (reglas primero, IA de respaldo)</option>
+        </select>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-secundario" onclick="cerrarModalChatbot()">Cancelar</button>
+      <button class="btn btn-primario" onclick="crearChatbot()">Crear chatbot</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="modal-regla" onclick="if(event.target===this)cerrarModalRegla()">
+  <div class="modal-box">
+    <div class="modal-head">
+      <h3>Agregar regla</h3>
+      <button class="cerrar" onclick="cerrarModalRegla()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="mensaje-error" id="modal-regla-error"></div>
+      <div class="form-group">
+        <label>Pregunta</label>
+        <input type="text" id="regla-pregunta" placeholder="Ej: ¿A qué hora abren?" required>
+      </div>
+      <div class="form-group">
+        <label>Palabras clave (separadas por coma)</label>
+        <input type="text" id="regla-palabras" placeholder="Ej: horario, abren, abierto" required>
+      </div>
+      <div class="form-group">
+        <label>Respuesta</label>
+        <textarea id="regla-respuesta" rows="3" placeholder="Ej: Abrimos de 9am a 9pm, lunes a sábado." required></textarea>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-secundario" onclick="cerrarModalRegla()">Cancelar</button>
+      <button class="btn btn-primario" onclick="crearRegla()">Guardar regla</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const API_URL = "https://servix-9i0u.onrender.com";
+
+let cliente = null;
+let chatbots = [];
+let chatbotSeleccionado = null;
+
+(async function init(){
+  const token = localStorage.getItem('servix_token');
+  if(!token){
+    window.location.href = '/';
+    return;
+  }
+
+  try{
+    const resp = await fetch(`${API_URL}/api/me`, {
+      headers: { 'Authorization': `Bearer ${token}` }
+    });
+
+    if(!resp.ok){
+      localStorage.removeItem('servix_token');
+      localStorage.removeItem('servix_cliente');
+      window.location.href = '/';
+      return;
+    }
+
+    const data = await resp.json();
+    cliente = data.cliente;
+
+    document.getElementById('header-nombre').textContent = cliente.nombre_completo;
+
+    const badge = document.getElementById('header-badge');
+    const estado = cliente.estado;
+
+    if(estado === 'prueba'){
+      badge.className = 'badge-estado badge-prueba';
+      badge.textContent = '✅ PRUEBA';
+    } else if(estado === 'activo'){
+      badge.className = 'badge-estado badge-activo';
+      const planNombre = (cliente.plan || '').toUpperCase();
+      badge.textContent = '✅ ' + (planNombre || 'ACTIVO');
+    } else if(estado === 'suspendido'){
+      badge.className = 'badge-estado badge-suspendido';
+      const planNombre = (cliente.plan || '').toUpperCase();
+      badge.textContent = '✅ SUSPENDIDO · ' + (planNombre || '');
+    } else if(estado === 'cancelado'){
+      badge.className = 'badge-estado badge-cancelado';
+      badge.textContent = '✅ CANCELADO';
+    }
+
+    mostrarInicioSegunEstado();
+    await cargarChatbots();
+
+  }catch(err){
+    console.error(err);
+    localStorage.removeItem('servix_token');
+    window.location.href = '/';
+  }
+})();
+
+function navegarA(seccion){
+  document.querySelectorAll('.seccion').forEach(s=>s.classList.remove('activa'));
+  document.querySelectorAll('.menu-item').forEach(m=>m.classList.remove('active'));
+
+  const sec = document.getElementById('seccion-' + seccion);
+  if(sec) sec.classList.add('activa');
+
+  const menu = document.querySelector(`.menu-item[data-seccion="${seccion}"]`);
+  if(menu) menu.classList.add('active');
+
+  if(seccion === 'reglas') llenarSelectChatbots('select-chatbot-reglas');
+  if(seccion === 'instalar') llenarSelectChatbots('select-chatbot-instalar');
+  if(seccion === 'cuenta') cargarCuenta();
+}
+
+function mostrarInicioSegunEstado(){
+  document.getElementById('inicio-titulo').textContent = 'Hola, ' + cliente.nombre_completo.split(' ')[0] + ' 👋';
+
+  const estado = cliente.estado;
+
+  if(estado === 'prueba'){
+    document.getElementById('inicio-sub').textContent = 'Estás en prueba gratuita.';
+    document.getElementById('inicio-prueba').style.display = 'block';
+
+    if(cliente.fecha_fin_prueba){
+      const fin = new Date(cliente.fecha_fin_prueba);
+      const hoy = new Date();
+      const dias = Math.max(0, Math.ceil((fin - hoy) / (1000 * 60 * 60 * 24)));
+      document.getElementById('dias-restantes').textContent = dias;
+    }
+  } else if(estado === 'activo'){
+    document.getElementById('inicio-sub').textContent = 'Resumen de tu cuenta.';
+    document.getElementById('inicio-activo').style.display = 'block';
+    document.getElementById('dato-plan').textContent = (cliente.plan || '').toUpperCase() || 'Activo';
+  } else if(estado === 'suspendido'){
+    document.getElementById('inicio-sub').textContent = 'Tu cuenta está suspendida.';
+    document.getElementById('inicio-suspendido').style.display = 'block';
+  } else {
+    document.getElementById('inicio-sub').textContent = '';
+  }
+}
+
+async function cargarChatbots(){
+  const token = localStorage.getItem('servix_token');
+  try{
+    const resp = await fetch(`${API_URL}/api/chatbots`, {
+      headers: { 'Authorization': `Bearer ${token}` }
+    });
+    const data = await resp.json();
+    chatbots = data.chatbots || [];
+    renderizarChatbots();
+    llenarSelectChatbots('select-chatbot-reglas');
+    llenarSelectChatbots('select-chatbot-instalar');
+  }catch(err){
+    console.error(err);
+  }
+}
+
+function renderizarChatbots(){
+  const cont = document.getElementById('lista-chatbots');
+  if(chatbots.length === 0){
+    cont.innerHTML = '<div class="card"><p style="color:var(--texto-secundario);">Aún no tienes chatbots. Crea el primero con el botón de arriba.</p></div>';
+    return;
+  }
+
+  cont.innerHTML = chatbots.map(cb => `
+    <div class="card">
+      <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;">
+        <div>
+          <h3 class="card-title" style="margin-bottom:4px;">
+            🤖 ${cb.nombre}
+            ${cb.activo ? '<span style="color:var(--verde);font-size:12px;">● Activo</span>' : '<span style="color:var(--rojo);font-size:12px;">● Inactivo</span>'}
+          </h3>
+          <p style="color:var(--texto-secundario);font-size:13px;">
+            Modo: <b>${cb.modo}</b> · Token: <code>${cb.token}</code>
+          </p>
+        </div>
+        <div style="display:flex;gap:8px;">
+          <button class="btn btn-peligro btn-chico" onclick="eliminarChatbot(${cb.id}, '${cb.nombre}')">
+            <i class="bi bi-trash"></i>
+          </button>
+        </div>
+      </div>
+    </div>
+  `).join('');
+}
+
+function llenarSelectChatbots(selectId){
+  const select = document.getElementById(selectId);
+  if(!select) return;
+  select.innerHTML = '<option value="">— Selecciona un chatbot —</option>' +
+    chatbots.map(cb => `<option value="${cb.id}">${cb.nombre}</option>`).join('');
+}
+
+function abrirModalChatbot(){
+  document.getElementById('modal-chatbot').classList.add('open');
+  document.getElementById('chatbot-nombre').value = '';
+  document.getElementById('chatbot-modo').value = 'reglas';
+  document.getElementById('modal-chatbot-error').classList.remove('visible');
+}
+
+function cerrarModalChatbot(){
+  document.getElementById('modal-chatbot').classList.remove('open');
+}
+
+async function crearChatbot(){
+  const nombre = document.getElementById('chatbot-nombre').value.trim();
+  const modo = document.getElementById('chatbot-modo').value;
+  const err = document.getElementById('modal-chatbot-error');
+
+  if(!nombre){
+    err.textContent = 'El nombre es obligatorio';
+    err.classList.add('visible');
+    return;
+  }
+
+  const token = localStorage.getItem('servix_token');
+
+  try{
+    const resp = await fetch(`${API_URL}/api/chatbots`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      },
+      body: JSON.stringify({ nombre, modo })
+    });
+
+    const data = await resp.json();
+
+    if(!resp.ok){
+      err.textContent = data.detail || 'Error al crear el chatbot';
+      err.classList.add('visible');
+      return;
+    }
+
+    cerrarModalChatbot();
+    await cargarChatbots();
+    alert('✅ Chatbot creado correctamente');
+
+  }catch(e){
+    err.textContent = 'Error de conexión';
+    err.classList.add('visible');
+  }
+}
+
+async function eliminarChatbot(id, nombre){
+  if(!confirm(`¿Eliminar el chatbot "${nombre}"? Esta acción no se puede deshacer.`)) return;
+
+  const token = localStorage.getItem('servix_token');
+  try{
+    const resp = await fetch(`${API_URL}/api/chatbots/${id}`, {
+      method: 'DELETE',
+      headers: { 'Authorization': `Bearer ${token}` }
+    });
+
+    if(resp.ok){
+      await cargarChatbots();
+      alert('Chatbot eliminado');
+    } else {
+      alert('Error al eliminar');
+    }
+  }catch(e){
+    alert('Error de conexión');
+  }
+}
+
+async function cargarReglas(){
+  const chatbotId = document.getElementById('select-chatbot-reglas').value;
+  const cont = document.getElementById('lista-reglas');
+  const btnNueva = document.getElementById('btn-nueva-regla');
+
+  if(!chatbotId){
+    cont.innerHTML = '';
+    btnNueva.disabled = true;
+    return;
+  }
+
+  btnNueva.disabled = false;
+  chatbotSeleccionado = chatbotId;
+
+  const token = localStorage.getItem('servix_token');
+  try{
+    const resp = await fetch(`${API_URL}/api/reglas/${chatbotId}`, {
+      headers: { 'Authorization': `Bearer ${token}` }
+    });
+    const data = await resp.json();
+    const reglas = data.reglas || [];
+
+    if(reglas.length === 0){
+      cont.innerHTML = '<div class="card"><p style="color:var(--texto-secundario);">Este chatbot aún no tiene reglas. Agrega la primera.</p></div>';
+      return;
+    }
+
+    cont.innerHTML = `
+      <div class="tabla-wrap">
+        <table class="tabla">
+          <thead>
+            <tr>
+              <th>Pregunta</th>
+              <th>Palabras clave</th>
+              <th>Respuesta</th>
+              <th>Acciones</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${reglas.map(r => `
+              <tr>
+                <td>${r.pregunta}</td>
+                <td><code>${r.palabras_clave}</code></td>
+                <td>${r.respuesta}</td>
+                <td>
+                  <button class="btn btn-peligro btn-chico" onclick="eliminarRegla(${r.id})">
+                    <i class="bi bi-trash"></i>
+                  </button>
+                </td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+      </div>
+    `;
+  }catch(e){
+    console.error(e);
+  }
+}
+
+function abrirModalRegla(){
+  if(!chatbotSeleccionado){
+    alert('Selecciona un chatbot primero');
+    return;
+  }
+  document.getElementById('modal-regla').classList.add('open');
+  document.getElementById('regla-pregunta').value = '';
+  document.getElementById('regla-palabras').value = '';
+  document.getElementById('regla-respuesta').value = '';
+  document.getElementById('modal-regla-error').classList.remove('visible');
+}
+
+function cerrarModalRegla(){
+  document.getElementById('modal-regla').classList.remove('open');
+}
+
+async function crearRegla(){
+  const pregunta = document.getElementById('regla-pregunta').value.trim();
+  const palabras_clave = document.getElementById('regla-palabras').value.trim();
+  const respuesta = document.getElementById('regla-respuesta').value.trim();
+  const err = document.getElementById('modal-regla-error');
+
+  if(!pregunta || !palabras_clave || !respuesta){
+    err.textContent = 'Todos los campos son obligatorios';
+    err.classList.add('visible');
+    return;
+  }
+
+  const token = localStorage.getItem('servix_token');
+  try{
+    const resp = await fetch(`${API_URL}/api/reglas`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      },
+      body: JSON.stringify({
+        chatbot_id: parseInt(chatbotSeleccionado),
+        pregunta,
+        palabras_clave,
+        respuesta
+      })
+    });
+
+    const data = await resp.json();
+    if(!resp.ok){
+      err.textContent = data.detail || 'Error al crear la regla';
+      err.classList.add('visible');
+      return;
+    }
+
+    cerrarModalRegla();
+    await cargarReglas();
+    alert('✅ Regla guardada');
+
+  }catch(e){
+    err.textContent = 'Error de conexión';
+    err.classList.add('visible');
+  }
+}
+
+async function eliminarRegla(id){
+  if(!confirm('¿Eliminar esta regla?')) return;
+  const token = localStorage.getItem('servix_token');
+  try{
+    const resp = await fetch(`${API_URL}/api/reglas/${id}`, {
+      method: 'DELETE',
+      headers: { 'Authorization': `Bearer ${token}` }
+    });
+    if(resp.ok){
+      await cargarReglas();
+    }
+  }catch(e){
+    alert('Error de conexión');
+  }
+}
+
+function mostrarCodigoInstalar(){
+  const chatbotId = document.getElementById('select-chatbot-instalar').value;
+  const cont = document.getElementById('codigo-instalar-container');
+
+  if(!chatbotId){
+    cont.style.display = 'none';
+    return;
+  }
+
+  const cb = chatbots.find(c => c.id == chatbotId);
+  if(!cb) return;
+
+  const codigo = '<script src="' + API_URL + '/widget/' + cb.token + '.js"><\/script>';
+  document.getElementById('codigo-instalar').textContent = codigo;
+  cont.style.display = 'block';
+}
+
+function copiarCodigo(){
+  const texto = document.getElementById('codigo-instalar').textContent;
+  navigator.clipboard.writeText(texto).then(() => {
+    alert('✅ Código copiado al portapapeles');
+  }).catch(() => {
+    alert('No se pudo copiar. Selecciónalo manualmente.');
+  });
+}
+
+function cargarCuenta(){
+  document.getElementById('cuenta-nombre').value = cliente.nombre_completo || '';
+  document.getElementById('cuenta-negocio').value = cliente.negocio || '';
+  document.getElementById('cuenta-email').value = cliente.email || '';
+  document.getElementById('cuenta-estado').value = cliente.estado || '';
+  document.getElementById('cuenta-plan').value = (cliente.plan || 'Ninguno').toUpperCase();
+  document.getElementById('cuenta-pago').value = cliente.proximo_pago || '—';
+}
+
+function contratarPlan(plan){
+  alert('Vas a contratar el plan ' + plan.toUpperCase() + '.\n\nPor ahora, contacta a soporte para completar el pago.');
+}
+
+function contactarSoporte(){
+  alert('Contacta a soporte:\n\n📧 soporte@servix.com\n💬 WhatsApp: pendiente');
+}
+
+function cerrarSesion(){
+  if(!confirm('¿Cerrar sesión?')) return;
+  localStorage.removeItem('servix_token');
+  localStorage.removeItem('servix_cliente');
+  window.location.href = '/';
+}
+</script>
+
+</body>
+</html>
