@@ -32,7 +32,6 @@ body{
 }
 h1,h2,h3,h4{font-family:'Poppins',sans-serif;font-weight:600;}
 
-/* ============ HEADER ============ */
 .header{
   background:var(--azul-header);
   padding:14px 24px;
@@ -91,10 +90,8 @@ h1,h2,h3,h4{font-family:'Poppins',sans-serif;font-weight:600;}
 }
 .btn-salir:hover{background:rgba(255,255,255,.15);}
 
-/* ============ LAYOUT ============ */
 .app-shell{display:flex;min-height:calc(100vh - 64px);}
 
-/* ============ SIDEBAR ============ */
 .sidebar{
   width:240px;
   background:#ffffff;
@@ -134,7 +131,6 @@ h1,h2,h3,h4{font-family:'Poppins',sans-serif;font-weight:600;}
   margin:10px 20px;
 }
 
-/* ============ CONTENIDO ============ */
 .contenido{
   flex:1;
   padding:24px 32px;
@@ -153,7 +149,6 @@ h1,h2,h3,h4{font-family:'Poppins',sans-serif;font-weight:600;}
 .seccion{display:none;}
 .seccion.activa{display:block;}
 
-/* ============ CARDS ============ */
 .card{
   background:#fff;
   border:1px solid var(--gris-borde);
@@ -188,7 +183,6 @@ h1,h2,h3,h4{font-family:'Poppins',sans-serif;font-weight:600;}
 .dato .valor.amarillo{color:var(--amarillo);}
 .dato .valor.rojo{color:var(--rojo);}
 
-/* ============ BOTONES ============ */
 .btn{
   padding:9px 18px;
   border-radius:8px;
@@ -200,6 +194,7 @@ h1,h2,h3,h4{font-family:'Poppins',sans-serif;font-weight:600;}
   display:inline-flex;
   align-items:center;
   gap:8px;
+  white-space:nowrap;
 }
 .btn-primario{background:var(--azul-boton);color:#fff;}
 .btn-primario:hover{background:#1e5bbf;}
@@ -209,14 +204,14 @@ h1,h2,h3,h4{font-family:'Poppins',sans-serif;font-weight:600;}
 .btn-peligro:hover{background:#b02a37;}
 .btn-verde{background:var(--verde);color:#fff;}
 .btn-verde:hover{background:#257a47;}
-.btn-chico{padding:5px 10px;font-size:12px;}
+.btn-chico{padding:6px 12px;font-size:12.5px;}
 
-/* ============ TABLA ============ */
 .tabla-wrap{
   background:#fff;
   border:1px solid var(--gris-borde);
   border-radius:10px;
   overflow:hidden;
+  overflow-x:auto;
 }
 table.tabla{
   width:100%;
@@ -238,11 +233,12 @@ table.tabla tbody td{
   padding:14px 16px;
   border-bottom:1px solid var(--gris-borde);
   color:var(--texto-oscuro);
+  vertical-align:middle;
 }
 table.tabla tbody tr:last-child td{border-bottom:none;}
 table.tabla tbody tr:hover{background:var(--gris-bg);}
+.acciones-cell{display:flex;gap:6px;flex-wrap:wrap;}
 
-/* ============ BADGES DE ESTADO ============ */
 .badge-estado{
   display:inline-flex;
   align-items:center;
@@ -258,7 +254,6 @@ table.tabla tbody tr:hover{background:var(--gris-bg);}
 .badge-suspendido{background:var(--rojo);}
 .badge-cancelado{background:#6c757d;}
 
-/* ============ MODAL ============ */
 .modal-overlay{
   position:fixed;
   inset:0;
@@ -326,7 +321,16 @@ table.tabla tbody tr:hover{background:var(--gris-bg);}
 }
 .mensaje-error.visible{display:block;}
 
-/* ============ RESPONSIVE ============ */
+.aviso-vacio{
+  color:var(--texto-secundario);
+  line-height:1.7;
+}
+.aviso-vacio code{
+  background:var(--gris-bg);
+  padding:2px 6px;
+  border-radius:4px;
+}
+
 @media(max-width:900px){
   .grid-4,.grid-3{grid-template-columns:1fr 1fr;}
 }
@@ -350,7 +354,6 @@ table.tabla tbody tr:hover{background:var(--gris-bg);}
 </head>
 <body>
 
-<!-- ================= HEADER ================= -->
 <header class="header">
   <a href="#" class="logo">
     <img src="/logo.jpg" alt="SERVIX">
@@ -365,7 +368,6 @@ table.tabla tbody tr:hover{background:var(--gris-bg);}
 
 <div class="app-shell">
 
-  <!-- SIDEBAR -->
   <aside class="sidebar" id="sidebar">
     <div class="menu-item active" data-seccion="inicio" onclick="navegarA('inicio')">
       <i class="bi bi-speedometer2"></i> Inicio
@@ -385,10 +387,8 @@ table.tabla tbody tr:hover{background:var(--gris-bg);}
     </div>
   </aside>
 
-  <!-- CONTENIDO -->
   <main class="contenido">
 
-    <!-- ============ SECCIÓN INICIO ============ -->
     <section class="seccion activa" id="seccion-inicio">
       <h1 class="page-title">Dashboard</h1>
       <p class="page-sub">Resumen general de SERVIX.</p>
@@ -436,7 +436,6 @@ table.tabla tbody tr:hover{background:var(--gris-bg);}
       </div>
     </section>
 
-    <!-- ============ SECCIÓN CLIENTES ============ -->
     <section class="seccion" id="seccion-clientes">
       <h1 class="page-title">Clientes</h1>
       <p class="page-sub">Gestiona todos los clientes registrados en SERVIX.</p>
@@ -460,7 +459,6 @@ table.tabla tbody tr:hover{background:var(--gris-bg);}
       <div id="lista-clientes"></div>
     </section>
 
-    <!-- ============ SECCIÓN FACTURAS ============ -->
     <section class="seccion" id="seccion-facturas">
       <h1 class="page-title">Facturas</h1>
       <p class="page-sub">Historial de pagos de todos los clientes.</p>
@@ -470,7 +468,6 @@ table.tabla tbody tr:hover{background:var(--gris-bg);}
       </div>
     </section>
 
-    <!-- ============ SECCIÓN REPORTES ============ -->
     <section class="seccion" id="seccion-reportes">
       <h1 class="page-title">Reportes</h1>
       <p class="page-sub">Métricas y estadísticas de la plataforma.</p>
@@ -504,7 +501,6 @@ table.tabla tbody tr:hover{background:var(--gris-bg);}
   </main>
 </div>
 
-<!-- ================= MODAL: DETALLE DEL CLIENTE ================= -->
 <div class="modal-overlay" id="modal-cliente" onclick="if(event.target===this)cerrarModalCliente()">
   <div class="modal-box">
     <div class="modal-head">
@@ -524,18 +520,12 @@ table.tabla tbody tr:hover{background:var(--gris-bg);}
 </div>
 
 <script>
-// =====================================================
-// CONFIGURACIÓN
-// =====================================================
 const API_URL = "https://servix-9i0u.onrender.com";
 
 let admin = null;
 let clientes = [];
 let clienteSeleccionado = null;
 
-// =====================================================
-// INICIALIZACIÓN
-// =====================================================
 (async function init(){
   const token = localStorage.getItem('servix_token');
   if(!token){
@@ -558,7 +548,6 @@ let clienteSeleccionado = null;
     const data = await resp.json();
     admin = data.cliente;
 
-    // Verificar que es admin
     if(admin.email !== 'admin@servix.com'){
       alert('No tienes permisos de administrador');
       window.location.href = '/portal-cliente.html';
@@ -567,7 +556,6 @@ let clienteSeleccionado = null;
 
     document.getElementById('header-nombre').textContent = admin.nombre_completo || 'Admin';
 
-    // Cargar clientes
     await cargarClientes();
 
   }catch(err){
@@ -577,9 +565,6 @@ let clienteSeleccionado = null;
   }
 })();
 
-// =====================================================
-// NAVEGACIÓN
-// =====================================================
 function navegarA(seccion){
   document.querySelectorAll('.seccion').forEach(s=>s.classList.remove('activa'));
   document.querySelectorAll('.menu-item').forEach(m=>m.classList.remove('active'));
@@ -594,9 +579,6 @@ function navegarA(seccion){
   if(seccion === 'reportes') cargarReportes();
 }
 
-// =====================================================
-// CARGAR CLIENTES
-// =====================================================
 async function cargarClientes(){
   const token = localStorage.getItem('servix_token');
   try{
@@ -608,7 +590,7 @@ async function cargarClientes(){
       console.error('Error al cargar clientes:', resp.status);
       document.getElementById('lista-clientes').innerHTML = `
         <div class="card">
-          <p style="color:#a72e21;">Error al cargar clientes. Verifica que el endpoint /api/admin/clientes exista en el backend.</p>
+          <p style="color:#a72e21;">Error al cargar clientes (código ${resp.status}). Verifica que el backend esté desplegado y que tu sesión de admin no haya expirado.</p>
         </div>
       `;
       return;
@@ -624,7 +606,7 @@ async function cargarClientes(){
     console.error(err);
     document.getElementById('lista-clientes').innerHTML = `
       <div class="card">
-        <p style="color:#a72e21;">Error de conexión.</p>
+        <p style="color:#a72e21;">Error de conexión con el servidor.</p>
       </div>
     `;
   }
@@ -653,6 +635,20 @@ function renderizarClientes(){
   let lista = clientes;
   if(filtro) lista = clientes.filter(c => c.estado === filtro);
 
+  if(clientes.length === 0){
+    cont.innerHTML = `
+      <div class="card">
+        <p class="aviso-vacio">
+          Todavía no hay ningún cliente registrado (aparte de tu cuenta de administrador).
+          Los botones de <b>Activar / Suspender</b> aparecen en esta tabla una vez que exista
+          al menos un cliente — regístrate con otro correo desde la página principal
+          (botón <code>REGISTRARSE GRATIS</code>) para ver el flujo completo aquí.
+        </p>
+      </div>
+    `;
+    return;
+  }
+
   if(lista.length === 0){
     cont.innerHTML = '<div class="card"><p style="color:var(--texto-secundario);">No hay clientes con ese filtro.</p></div>';
     return;
@@ -676,6 +672,7 @@ function renderizarClientes(){
             const estadoBadge = obtenerBadgeEstado(c.estado);
             const plan = c.plan ? c.plan.toUpperCase() : '—';
             const fecha = c.fecha_registro ? new Date(c.fecha_registro).toLocaleDateString('es-MX') : '—';
+            const puedeActivar = (c.estado === 'suspendido' || c.estado === 'cancelado');
 
             return `
               <tr>
@@ -688,17 +685,19 @@ function renderizarClientes(){
                 <td>${estadoBadge}</td>
                 <td>${fecha}</td>
                 <td>
-                  <button class="btn btn-secundario btn-chico" onclick="verDetalleCliente(${c.id})" title="Ver detalle">
-                    <i class="bi bi-eye"></i>
-                  </button>
-                  ${c.estado === 'suspendido' || c.estado === 'cancelado' 
-                    ? `<button class="btn btn-verde btn-chico" onclick="cambiarEstado(${c.id}, true)" title="Activar">
-                        <i class="bi bi-check-lg"></i>
-                       </button>`
-                    : `<button class="btn btn-peligro btn-chico" onclick="cambiarEstado(${c.id}, false)" title="Suspender">
-                        <i class="bi bi-pause-fill"></i>
-                       </button>`
-                  }
+                  <div class="acciones-cell">
+                    <button class="btn btn-secundario btn-chico" onclick="verDetalleCliente(${c.id})" title="Ver detalle">
+                      <i class="bi bi-eye"></i> Ver
+                    </button>
+                    ${puedeActivar
+                      ? `<button class="btn btn-verde btn-chico" onclick="cambiarEstado(${c.id}, true)" title="Activar cuenta">
+                          <i class="bi bi-check-lg"></i> Activar
+                         </button>`
+                      : `<button class="btn btn-peligro btn-chico" onclick="cambiarEstado(${c.id}, false)" title="Suspender cuenta">
+                          <i class="bi bi-pause-fill"></i> Suspender
+                         </button>`
+                    }
+                  </div>
                 </td>
               </tr>
             `;
@@ -717,9 +716,6 @@ function obtenerBadgeEstado(estado){
   return '<span class="badge-estado">' + estado + '</span>';
 }
 
-// =====================================================
-// VER DETALLE DEL CLIENTE
-// =====================================================
 function verDetalleCliente(id){
   const c = clientes.find(x => x.id === id);
   if(!c) return;
@@ -743,6 +739,20 @@ function verDetalleCliente(id){
     <div class="info-row"><span class="label">Fin de prueba</span><span class="valor">${fechaFinPrueba}</span></div>
     <div class="info-row"><span class="label">Próximo pago</span><span class="valor">${proximoPago}</span></div>
     <div class="info-row"><span class="label">Chatbots</span><span class="valor">${c.total_chatbots || 0}</span></div>
+    <div class="info-row" style="flex-direction:column;align-items:stretch;gap:8px;padding-top:16px;border-top:2px solid var(--gris-borde);margin-top:6px;">
+      <span class="label" style="margin-bottom:2px;">Cambiar plan (al confirmar el pago)</span>
+      <div style="display:flex;gap:8px;">
+        <select id="select-plan-cliente" style="flex:1;padding:9px 10px;border:1px solid var(--gris-borde);border-radius:6px;font-size:13px;">
+          <option value="starter" ${c.plan==='starter'?'selected':''}>STARTER — 1 chatbot</option>
+          <option value="pro" ${c.plan==='pro'?'selected':''}>PRO — 3 chatbots</option>
+          <option value="business" ${c.plan==='business'?'selected':''}>BUSINESS — 10 chatbots</option>
+        </select>
+        <button class="btn btn-primario btn-chico" onclick="cambiarPlanCliente(${c.id})">
+          <i class="bi bi-check-lg"></i> Guardar
+        </button>
+      </div>
+      <small style="color:var(--texto-secundario);">Esto también activa la cuenta del cliente (la saca de "prueba"/"suspendido").</small>
+    </div>
   `;
 
   document.getElementById('modal-cliente').classList.add('open');
@@ -753,23 +763,15 @@ function cerrarModalCliente(){
   clienteSeleccionado = null;
 }
 
-// =====================================================
-// VER PORTAL DEL CLIENTE
-// =====================================================
 function verPortalCliente(){
   if(!clienteSeleccionado) return;
 
-  // Guardar en localStorage que estamos viendo como admin
   localStorage.setItem('servix_admin_viewing', clienteSeleccionado.nombre_completo);
   localStorage.setItem('servix_admin_viewing_id', clienteSeleccionado.id);
 
-  // Abrir el Portal del Cliente en una nueva pestaña
   window.open('/portal-cliente.html', '_blank');
 }
 
-// =====================================================
-// CAMBIAR ESTADO DEL CLIENTE
-// =====================================================
 async function cambiarEstado(id, activar){
   const accion = activar ? 'activar' : 'suspender';
   const confirmacion = confirm(`¿Seguro que quieres ${accion} a este cliente?`);
@@ -800,14 +802,42 @@ async function cambiarEstado(id, activar){
   }
 }
 
-// =====================================================
-// CARGAR REPORTES
-// =====================================================
+async function cambiarPlanCliente(id){
+  const select = document.getElementById('select-plan-cliente');
+  const nuevoPlan = select.value;
+
+  const confirmacion = confirm(`¿Confirmas que este cliente ya pagó y quieres activarlo en el plan ${nuevoPlan.toUpperCase()}?`);
+  if(!confirmacion) return;
+
+  const token = localStorage.getItem('servix_token');
+  try{
+    const resp = await fetch(`${API_URL}/api/admin/clientes/${id}/plan`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      },
+      body: JSON.stringify({ plan: nuevoPlan })
+    });
+
+    if(resp.ok){
+      await cargarClientes();
+      cerrarModalCliente();
+      alert(`✅ Cliente activado en el plan ${nuevoPlan.toUpperCase()}`);
+    } else {
+      const data = await resp.json();
+      alert('Error: ' + (data.detail || 'No se pudo cambiar el plan'));
+    }
+  }catch(err){
+    console.error(err);
+    alert('Error de conexión');
+  }
+}
+
 function cargarReportes(){
   const activos = clientes.filter(c => c.estado === 'activo');
   const total = clientes.length;
 
-  // Cálculo de ingreso estimado (asumiendo $480 USD promedio)
   const ingresos = activos.length * 480;
 
   document.getElementById('dato-ingresos').textContent = '$' + ingresos.toLocaleString('en-US') + ' USD';
@@ -815,9 +845,6 @@ function cargarReportes(){
   document.getElementById('dato-chatbots-totales').textContent = clientes.reduce((sum, c) => sum + (c.total_chatbots || 0), 0);
 }
 
-// =====================================================
-// CERRAR SESIÓN
-// =====================================================
 function cerrarSesion(){
   if(!confirm('¿Cerrar sesión de administrador?')) return;
   localStorage.removeItem('servix_token');
