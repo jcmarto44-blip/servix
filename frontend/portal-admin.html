@@ -1,0 +1,832 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SERVIX — Portal Administrador</title>
+
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Poppins:wght@500;600;700&display=swap" rel="stylesheet">
+
+<style>
+:root{
+  --azul-header:#1b4b8f;
+  --azul-boton:#2e6fd9;
+  --verde:#2e9e5b;
+  --amarillo:#f5a623;
+  --rojo:#dc3545;
+  --gris-bg:#f7f8fa;
+  --gris-borde:#e5e7eb;
+  --gris-icono:#5b6773;
+  --texto-oscuro:#1e2733;
+  --texto-secundario:#5b6773;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+html,body{height:100%;}
+body{
+  font-family:'Inter',sans-serif;
+  background:var(--gris-bg);
+  color:var(--texto-oscuro);
+  font-size:14px;
+}
+h1,h2,h3,h4{font-family:'Poppins',sans-serif;font-weight:600;}
+
+/* ============ HEADER ============ */
+.header{
+  background:var(--azul-header);
+  padding:14px 24px;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  box-shadow:0 2px 8px rgba(0,0,0,.08);
+  position:sticky;
+  top:0;
+  z-index:100;
+  color:#fff;
+}
+.header .logo{
+  display:flex;
+  align-items:center;
+  gap:10px;
+  color:#fff;
+  text-decoration:none;
+  font-family:'Poppins',sans-serif;
+  font-weight:600;
+  font-size:18px;
+}
+.header .logo img{
+  width:36px;
+  height:36px;
+  object-fit:contain;
+  background:#fff;
+  border-radius:8px;
+  padding:2px;
+}
+.header .info-admin{
+  display:flex;
+  align-items:center;
+  gap:16px;
+  font-size:13.5px;
+}
+.header .badge-admin{
+  background:#dc3545;
+  color:#fff;
+  font-size:11px;
+  font-weight:700;
+  padding:4px 10px;
+  border-radius:4px;
+  letter-spacing:.5px;
+}
+.btn-salir{
+  background:transparent;
+  border:1.5px solid rgba(255,255,255,.5);
+  color:#fff;
+  padding:7px 16px;
+  border-radius:6px;
+  cursor:pointer;
+  font-size:13px;
+  font-weight:600;
+  transition:all .2s;
+}
+.btn-salir:hover{background:rgba(255,255,255,.15);}
+
+/* ============ LAYOUT ============ */
+.app-shell{display:flex;min-height:calc(100vh - 64px);}
+
+/* ============ SIDEBAR ============ */
+.sidebar{
+  width:240px;
+  background:#ffffff;
+  border-right:1px solid var(--gris-borde);
+  padding:16px 0;
+  flex-shrink:0;
+}
+.sidebar .menu-item{
+  display:flex;
+  align-items:center;
+  gap:12px;
+  padding:11px 20px;
+  color:var(--texto-oscuro);
+  font-size:14px;
+  cursor:pointer;
+  border-left:3px solid transparent;
+  transition:all .15s;
+  user-select:none;
+}
+.sidebar .menu-item:hover{background:var(--gris-bg);}
+.sidebar .menu-item.active{
+  background:#eef4fb;
+  border-left-color:var(--azul-header);
+  color:var(--azul-header);
+  font-weight:600;
+}
+.sidebar .menu-item i{
+  font-size:17px;
+  color:var(--gris-icono);
+  width:20px;
+  text-align:center;
+}
+.sidebar .menu-item.active i{color:var(--azul-header);}
+.sidebar .menu-sep{
+  height:1px;
+  background:var(--gris-borde);
+  margin:10px 20px;
+}
+
+/* ============ CONTENIDO ============ */
+.contenido{
+  flex:1;
+  padding:24px 32px;
+  overflow-y:auto;
+}
+.page-title{
+  font-size:22px;
+  margin-bottom:6px;
+  color:var(--texto-oscuro);
+}
+.page-sub{
+  color:var(--texto-secundario);
+  font-size:14px;
+  margin-bottom:24px;
+}
+.seccion{display:none;}
+.seccion.activa{display:block;}
+
+/* ============ CARDS ============ */
+.card{
+  background:#fff;
+  border:1px solid var(--gris-borde);
+  border-radius:10px;
+  padding:20px 24px;
+  margin-bottom:16px;
+}
+.card-title{
+  font-size:15px;
+  font-weight:600;
+  margin-bottom:12px;
+  color:var(--texto-oscuro);
+}
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
+.grid-3{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;}
+.grid-4{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;}
+.dato{display:flex;flex-direction:column;gap:4px;}
+.dato .label{
+  font-size:12px;
+  color:var(--texto-secundario);
+  text-transform:uppercase;
+  letter-spacing:.5px;
+  font-weight:600;
+}
+.dato .valor{
+  font-size:26px;
+  font-weight:700;
+  color:var(--texto-oscuro);
+}
+.dato .valor.azul{color:var(--azul-boton);}
+.dato .valor.verde{color:var(--verde);}
+.dato .valor.amarillo{color:var(--amarillo);}
+.dato .valor.rojo{color:var(--rojo);}
+
+/* ============ BOTONES ============ */
+.btn{
+  padding:9px 18px;
+  border-radius:8px;
+  font-size:13.5px;
+  font-weight:600;
+  cursor:pointer;
+  border:none;
+  transition:all .2s;
+  display:inline-flex;
+  align-items:center;
+  gap:8px;
+}
+.btn-primario{background:var(--azul-boton);color:#fff;}
+.btn-primario:hover{background:#1e5bbf;}
+.btn-secundario{background:#fff;color:var(--texto-oscuro);border:1px solid var(--gris-borde);}
+.btn-secundario:hover{background:var(--gris-bg);}
+.btn-peligro{background:var(--rojo);color:#fff;}
+.btn-peligro:hover{background:#b02a37;}
+.btn-verde{background:var(--verde);color:#fff;}
+.btn-verde:hover{background:#257a47;}
+.btn-chico{padding:5px 10px;font-size:12px;}
+
+/* ============ TABLA ============ */
+.tabla-wrap{
+  background:#fff;
+  border:1px solid var(--gris-borde);
+  border-radius:10px;
+  overflow:hidden;
+}
+table.tabla{
+  width:100%;
+  border-collapse:collapse;
+  font-size:13.5px;
+}
+table.tabla thead th{
+  background:var(--gris-bg);
+  padding:12px 16px;
+  text-align:left;
+  font-weight:600;
+  color:var(--texto-secundario);
+  font-size:12px;
+  text-transform:uppercase;
+  letter-spacing:.5px;
+  border-bottom:1px solid var(--gris-borde);
+}
+table.tabla tbody td{
+  padding:14px 16px;
+  border-bottom:1px solid var(--gris-borde);
+  color:var(--texto-oscuro);
+}
+table.tabla tbody tr:last-child td{border-bottom:none;}
+table.tabla tbody tr:hover{background:var(--gris-bg);}
+
+/* ============ BADGES DE ESTADO ============ */
+.badge-estado{
+  display:inline-flex;
+  align-items:center;
+  gap:5px;
+  padding:4px 10px;
+  border-radius:20px;
+  font-weight:600;
+  font-size:11.5px;
+  color:#fff;
+}
+.badge-prueba{background:var(--amarillo);}
+.badge-activo{background:var(--azul-boton);}
+.badge-suspendido{background:var(--rojo);}
+.badge-cancelado{background:#6c757d;}
+
+/* ============ MODAL ============ */
+.modal-overlay{
+  position:fixed;
+  inset:0;
+  background:rgba(15,20,30,.6);
+  display:none;
+  align-items:center;
+  justify-content:center;
+  z-index:200;
+  padding:20px;
+}
+.modal-overlay.open{display:flex;}
+.modal-box{
+  background:#fff;
+  border-radius:12px;
+  width:100%;
+  max-width:560px;
+  box-shadow:0 20px 60px rgba(0,0,0,.3);
+  overflow:hidden;
+}
+.modal-head{
+  padding:20px 24px;
+  border-bottom:1px solid var(--gris-borde);
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+}
+.modal-head h3{font-size:16px;}
+.modal-head .cerrar{
+  background:transparent;
+  border:none;
+  font-size:22px;
+  color:#9aa4b0;
+  cursor:pointer;
+}
+.modal-body{padding:20px 24px;max-height:70vh;overflow-y:auto;}
+.modal-foot{
+  padding:16px 24px;
+  border-top:1px solid var(--gris-borde);
+  display:flex;
+  justify-content:flex-end;
+  gap:10px;
+  flex-wrap:wrap;
+}
+
+.info-row{
+  display:flex;
+  justify-content:space-between;
+  padding:9px 0;
+  border-bottom:1px solid var(--gris-borde);
+  font-size:13.5px;
+}
+.info-row:last-child{border:none;}
+.info-row .label{color:var(--texto-secundario);font-weight:600;}
+.info-row .valor{color:var(--texto-oscuro);}
+
+.mensaje-error{
+  background:#fdecea;
+  border:1px solid #f3b7b0;
+  color:#a72e21;
+  padding:10px 14px;
+  border-radius:6px;
+  font-size:13px;
+  margin-bottom:14px;
+  display:none;
+}
+.mensaje-error.visible{display:block;}
+
+/* ============ RESPONSIVE ============ */
+@media(max-width:900px){
+  .grid-4,.grid-3{grid-template-columns:1fr 1fr;}
+}
+@media(max-width:768px){
+  .sidebar{
+    position:fixed;
+    left:-240px;
+    height:100vh;
+    z-index:150;
+    transition:left .3s;
+  }
+  .sidebar.open{left:0;}
+  .app-shell{position:relative;}
+  .contenido{padding:16px;}
+  .grid-2,.grid-3,.grid-4{grid-template-columns:1fr;}
+  table.tabla{font-size:12.5px;}
+  table.tabla thead th,
+  table.tabla tbody td{padding:10px 8px;}
+}
+</style>
+</head>
+<body>
+
+<!-- ================= HEADER ================= -->
+<header class="header">
+  <a href="#" class="logo">
+    <img src="/logo.jpg" alt="SERVIX">
+    SERVIX
+  </a>
+  <div class="info-admin">
+    <span class="badge-admin">ADMIN</span>
+    <span>Admin · <b id="header-nombre">—</b></span>
+    <button class="btn-salir" onclick="cerrarSesion()">Salir</button>
+  </div>
+</header>
+
+<div class="app-shell">
+
+  <!-- SIDEBAR -->
+  <aside class="sidebar" id="sidebar">
+    <div class="menu-item active" data-seccion="inicio" onclick="navegarA('inicio')">
+      <i class="bi bi-speedometer2"></i> Inicio
+    </div>
+    <div class="menu-item" data-seccion="clientes" onclick="navegarA('clientes')">
+      <i class="bi bi-people"></i> Clientes
+    </div>
+    <div class="menu-item" data-seccion="facturas" onclick="navegarA('facturas')">
+      <i class="bi bi-receipt"></i> Facturas
+    </div>
+    <div class="menu-item" data-seccion="reportes" onclick="navegarA('reportes')">
+      <i class="bi bi-graph-up"></i> Reportes
+    </div>
+    <div class="menu-sep"></div>
+    <div class="menu-item" onclick="cerrarSesion()">
+      <i class="bi bi-box-arrow-right"></i> Salir
+    </div>
+  </aside>
+
+  <!-- CONTENIDO -->
+  <main class="contenido">
+
+    <!-- ============ SECCIÓN INICIO ============ -->
+    <section class="seccion activa" id="seccion-inicio">
+      <h1 class="page-title">Dashboard</h1>
+      <p class="page-sub">Resumen general de SERVIX.</p>
+
+      <div class="grid-4">
+        <div class="card">
+          <div class="dato">
+            <span class="label">Clientes totales</span>
+            <span class="valor azul" id="dato-total">0</span>
+          </div>
+        </div>
+        <div class="card">
+          <div class="dato">
+            <span class="label">Activos</span>
+            <span class="valor verde" id="dato-activos">0</span>
+          </div>
+        </div>
+        <div class="card">
+          <div class="dato">
+            <span class="label">En prueba</span>
+            <span class="valor amarillo" id="dato-prueba">0</span>
+          </div>
+        </div>
+        <div class="card">
+          <div class="dato">
+            <span class="label">Suspendidos</span>
+            <span class="valor rojo" id="dato-suspendidos">0</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3 class="card-title">Accesos rápidos</h3>
+        <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:12px;">
+          <button class="btn btn-primario" onclick="navegarA('clientes')">
+            <i class="bi bi-people"></i> Ver clientes
+          </button>
+          <button class="btn btn-secundario" onclick="navegarA('facturas')">
+            <i class="bi bi-receipt"></i> Ver facturas
+          </button>
+          <button class="btn btn-secundario" onclick="navegarA('reportes')">
+            <i class="bi bi-graph-up"></i> Ver reportes
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ SECCIÓN CLIENTES ============ -->
+    <section class="seccion" id="seccion-clientes">
+      <h1 class="page-title">Clientes</h1>
+      <p class="page-sub">Gestiona todos los clientes registrados en SERVIX.</p>
+
+      <div class="card" style="padding:14px 18px;">
+        <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;">
+          <label style="font-weight:600;font-size:13px;">Filtrar:</label>
+          <select id="filtro-estado" onchange="aplicarFiltro()" style="padding:7px 12px;border:1px solid var(--gris-borde);border-radius:6px;font-size:13px;">
+            <option value="">Todos</option>
+            <option value="activo">✅ Activos</option>
+            <option value="prueba">✅ En prueba</option>
+            <option value="suspendido">✅ Suspendidos</option>
+            <option value="cancelado">✅ Cancelados</option>
+          </select>
+          <button class="btn btn-secundario btn-chico" onclick="cargarClientes()">
+            <i class="bi bi-arrow-clockwise"></i> Recargar
+          </button>
+        </div>
+      </div>
+
+      <div id="lista-clientes"></div>
+    </section>
+
+    <!-- ============ SECCIÓN FACTURAS ============ -->
+    <section class="seccion" id="seccion-facturas">
+      <h1 class="page-title">Facturas</h1>
+      <p class="page-sub">Historial de pagos de todos los clientes.</p>
+
+      <div class="card">
+        <p style="color:var(--texto-secundario);">Aquí aparecerán las facturas de todos los clientes cuando se registren los pagos.</p>
+      </div>
+    </section>
+
+    <!-- ============ SECCIÓN REPORTES ============ -->
+    <section class="seccion" id="seccion-reportes">
+      <h1 class="page-title">Reportes</h1>
+      <p class="page-sub">Métricas y estadísticas de la plataforma.</p>
+
+      <div class="grid-3">
+        <div class="card">
+          <div class="dato">
+            <span class="label">Ingreso mensual estimado</span>
+            <span class="valor verde" id="dato-ingresos">$0 USD</span>
+          </div>
+        </div>
+        <div class="card">
+          <div class="dato">
+            <span class="label">Clientes activos</span>
+            <span class="valor azul" id="dato-activos-rep">0</span>
+          </div>
+        </div>
+        <div class="card">
+          <div class="dato">
+            <span class="label">Chatbots totales</span>
+            <span class="valor" id="dato-chatbots-totales">0</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <p style="color:var(--texto-secundario);">Aquí aparecerán más reportes: uso de IA, conversaciones, clientes nuevos por mes, etc.</p>
+      </div>
+    </section>
+
+  </main>
+</div>
+
+<!-- ================= MODAL: DETALLE DEL CLIENTE ================= -->
+<div class="modal-overlay" id="modal-cliente" onclick="if(event.target===this)cerrarModalCliente()">
+  <div class="modal-box">
+    <div class="modal-head">
+      <h3 id="modal-cliente-titulo">Detalle del cliente</h3>
+      <button class="cerrar" onclick="cerrarModalCliente()">✕</button>
+    </div>
+    <div class="modal-body" id="modal-cliente-body">
+      <!-- Contenido dinámico -->
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-secundario" onclick="cerrarModalCliente()">Cerrar</button>
+      <button class="btn btn-primario" id="btn-ver-portal" onclick="verPortalCliente()">
+        <i class="bi bi-box-arrow-up-right"></i> Ver Portal del Cliente
+      </button>
+    </div>
+  </div>
+</div>
+
+<script>
+// =====================================================
+// CONFIGURACIÓN
+// =====================================================
+const API_URL = "https://servix-9i0u.onrender.com";
+
+let admin = null;
+let clientes = [];
+let clienteSeleccionado = null;
+
+// =====================================================
+// INICIALIZACIÓN
+// =====================================================
+(async function init(){
+  const token = localStorage.getItem('servix_token');
+  if(!token){
+    window.location.href = '/';
+    return;
+  }
+
+  try{
+    const resp = await fetch(`${API_URL}/api/me`, {
+      headers: { 'Authorization': `Bearer ${token}` }
+    });
+
+    if(!resp.ok){
+      localStorage.removeItem('servix_token');
+      localStorage.removeItem('servix_cliente');
+      window.location.href = '/';
+      return;
+    }
+
+    const data = await resp.json();
+    admin = data.cliente;
+
+    // Verificar que es admin
+    if(admin.email !== 'admin@servix.com'){
+      alert('No tienes permisos de administrador');
+      window.location.href = '/portal-cliente.html';
+      return;
+    }
+
+    document.getElementById('header-nombre').textContent = admin.nombre_completo || 'Admin';
+
+    // Cargar clientes
+    await cargarClientes();
+
+  }catch(err){
+    console.error(err);
+    localStorage.removeItem('servix_token');
+    window.location.href = '/';
+  }
+})();
+
+// =====================================================
+// NAVEGACIÓN
+// =====================================================
+function navegarA(seccion){
+  document.querySelectorAll('.seccion').forEach(s=>s.classList.remove('activa'));
+  document.querySelectorAll('.menu-item').forEach(m=>m.classList.remove('active'));
+
+  const sec = document.getElementById('seccion-' + seccion);
+  if(sec) sec.classList.add('activa');
+
+  const menu = document.querySelector(`.menu-item[data-seccion="${seccion}"]`);
+  if(menu) menu.classList.add('active');
+
+  if(seccion === 'clientes') cargarClientes();
+  if(seccion === 'reportes') cargarReportes();
+}
+
+// =====================================================
+// CARGAR CLIENTES
+// =====================================================
+async function cargarClientes(){
+  const token = localStorage.getItem('servix_token');
+  try{
+    const resp = await fetch(`${API_URL}/api/admin/clientes`, {
+      headers: { 'Authorization': `Bearer ${token}` }
+    });
+
+    if(!resp.ok){
+      console.error('Error al cargar clientes:', resp.status);
+      document.getElementById('lista-clientes').innerHTML = `
+        <div class="card">
+          <p style="color:#a72e21;">Error al cargar clientes. Verifica que el endpoint /api/admin/clientes exista en el backend.</p>
+        </div>
+      `;
+      return;
+    }
+
+    const data = await resp.json();
+    clientes = data.clientes || [];
+
+    actualizarMetricas();
+    renderizarClientes();
+
+  }catch(err){
+    console.error(err);
+    document.getElementById('lista-clientes').innerHTML = `
+      <div class="card">
+        <p style="color:#a72e21;">Error de conexión.</p>
+      </div>
+    `;
+  }
+}
+
+function actualizarMetricas(){
+  const total = clientes.length;
+  const activos = clientes.filter(c => c.estado === 'activo').length;
+  const prueba = clientes.filter(c => c.estado === 'prueba').length;
+  const suspendidos = clientes.filter(c => c.estado === 'suspendido').length;
+
+  document.getElementById('dato-total').textContent = total;
+  document.getElementById('dato-activos').textContent = activos;
+  document.getElementById('dato-prueba').textContent = prueba;
+  document.getElementById('dato-suspendidos').textContent = suspendidos;
+}
+
+function aplicarFiltro(){
+  renderizarClientes();
+}
+
+function renderizarClientes(){
+  const filtro = document.getElementById('filtro-estado').value;
+  const cont = document.getElementById('lista-clientes');
+
+  let lista = clientes;
+  if(filtro) lista = clientes.filter(c => c.estado === filtro);
+
+  if(lista.length === 0){
+    cont.innerHTML = '<div class="card"><p style="color:var(--texto-secundario);">No hay clientes con ese filtro.</p></div>';
+    return;
+  }
+
+  cont.innerHTML = `
+    <div class="tabla-wrap">
+      <table class="tabla">
+        <thead>
+          <tr>
+            <th>Cliente</th>
+            <th>Negocio</th>
+            <th>Plan</th>
+            <th>Estado</th>
+            <th>Registro</th>
+            <th>Acciones</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${lista.map(c => {
+            const estadoBadge = obtenerBadgeEstado(c.estado);
+            const plan = c.plan ? c.plan.toUpperCase() : '—';
+            const fecha = c.fecha_registro ? new Date(c.fecha_registro).toLocaleDateString('es-MX') : '—';
+
+            return `
+              <tr>
+                <td>
+                  <b>${c.nombre_completo}</b><br>
+                  <small style="color:var(--texto-secundario);">${c.email}</small>
+                </td>
+                <td>${c.negocio || '—'}</td>
+                <td><b>${plan}</b></td>
+                <td>${estadoBadge}</td>
+                <td>${fecha}</td>
+                <td>
+                  <button class="btn btn-secundario btn-chico" onclick="verDetalleCliente(${c.id})" title="Ver detalle">
+                    <i class="bi bi-eye"></i>
+                  </button>
+                  ${c.estado === 'suspendido' || c.estado === 'cancelado' 
+                    ? `<button class="btn btn-verde btn-chico" onclick="cambiarEstado(${c.id}, true)" title="Activar">
+                        <i class="bi bi-check-lg"></i>
+                       </button>`
+                    : `<button class="btn btn-peligro btn-chico" onclick="cambiarEstado(${c.id}, false)" title="Suspender">
+                        <i class="bi bi-pause-fill"></i>
+                       </button>`
+                  }
+                </td>
+              </tr>
+            `;
+          }).join('')}
+        </tbody>
+      </table>
+    </div>
+  `;
+}
+
+function obtenerBadgeEstado(estado){
+  if(estado === 'prueba') return '<span class="badge-estado badge-prueba">✅ PRUEBA</span>';
+  if(estado === 'activo') return '<span class="badge-estado badge-activo">✅ ACTIVO</span>';
+  if(estado === 'suspendido') return '<span class="badge-estado badge-suspendido">✅ SUSPENDIDO</span>';
+  if(estado === 'cancelado') return '<span class="badge-estado badge-cancelado">✅ CANCELADO</span>';
+  return '<span class="badge-estado">' + estado + '</span>';
+}
+
+// =====================================================
+// VER DETALLE DEL CLIENTE
+// =====================================================
+function verDetalleCliente(id){
+  const c = clientes.find(x => x.id === id);
+  if(!c) return;
+
+  clienteSeleccionado = c;
+
+  document.getElementById('modal-cliente-titulo').textContent = c.nombre_completo;
+
+  const fechaRegistro = c.fecha_registro ? new Date(c.fecha_registro).toLocaleString('es-MX') : '—';
+  const fechaFinPrueba = c.fecha_fin_prueba ? new Date(c.fecha_fin_prueba).toLocaleDateString('es-MX') : '—';
+  const proximoPago = c.proximo_pago ? new Date(c.proximo_pago).toLocaleDateString('es-MX') : '—';
+
+  document.getElementById('modal-cliente-body').innerHTML = `
+    <div class="info-row"><span class="label">Nombre</span><span class="valor">${c.nombre_completo}</span></div>
+    <div class="info-row"><span class="label">Negocio</span><span class="valor">${c.negocio || '—'}</span></div>
+    <div class="info-row"><span class="label">Email</span><span class="valor">${c.email}</span></div>
+    <div class="info-row"><span class="label">Teléfono</span><span class="valor">${c.telefono || '—'}</span></div>
+    <div class="info-row"><span class="label">Plan</span><span class="valor"><b>${(c.plan || 'Ninguno').toUpperCase()}</b></span></div>
+    <div class="info-row"><span class="label">Estado</span><span class="valor">${obtenerBadgeEstado(c.estado)}</span></div>
+    <div class="info-row"><span class="label">Fecha de registro</span><span class="valor">${fechaRegistro}</span></div>
+    <div class="info-row"><span class="label">Fin de prueba</span><span class="valor">${fechaFinPrueba}</span></div>
+    <div class="info-row"><span class="label">Próximo pago</span><span class="valor">${proximoPago}</span></div>
+    <div class="info-row"><span class="label">Chatbots</span><span class="valor">${c.total_chatbots || 0}</span></div>
+  `;
+
+  document.getElementById('modal-cliente').classList.add('open');
+}
+
+function cerrarModalCliente(){
+  document.getElementById('modal-cliente').classList.remove('open');
+  clienteSeleccionado = null;
+}
+
+// =====================================================
+// VER PORTAL DEL CLIENTE
+// =====================================================
+function verPortalCliente(){
+  if(!clienteSeleccionado) return;
+
+  // Guardar en localStorage que estamos viendo como admin
+  localStorage.setItem('servix_admin_viewing', clienteSeleccionado.nombre_completo);
+  localStorage.setItem('servix_admin_viewing_id', clienteSeleccionado.id);
+
+  // Abrir el Portal del Cliente en una nueva pestaña
+  window.open('/portal-cliente.html', '_blank');
+}
+
+// =====================================================
+// CAMBIAR ESTADO DEL CLIENTE
+// =====================================================
+async function cambiarEstado(id, activar){
+  const accion = activar ? 'activar' : 'suspender';
+  const confirmacion = confirm(`¿Seguro que quieres ${accion} a este cliente?`);
+
+  if(!confirmacion) return;
+
+  const token = localStorage.getItem('servix_token');
+  try{
+    const resp = await fetch(`${API_URL}/api/admin/clientes/${id}/estado`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      },
+      body: JSON.stringify({ activo: activar })
+    });
+
+    if(resp.ok){
+      await cargarClientes();
+      alert(`Cliente ${activar ? 'activado' : 'suspendido'} correctamente`);
+    } else {
+      const data = await resp.json();
+      alert('Error: ' + (data.detail || 'No se pudo cambiar el estado'));
+    }
+  }catch(err){
+    console.error(err);
+    alert('Error de conexión');
+  }
+}
+
+// =====================================================
+// CARGAR REPORTES
+// =====================================================
+function cargarReportes(){
+  const activos = clientes.filter(c => c.estado === 'activo');
+  const total = clientes.length;
+
+  // Cálculo de ingreso estimado (asumiendo $480 USD promedio)
+  const ingresos = activos.length * 480;
+
+  document.getElementById('dato-ingresos').textContent = '$' + ingresos.toLocaleString('en-US') + ' USD';
+  document.getElementById('dato-activos-rep').textContent = activos.length;
+  document.getElementById('dato-chatbots-totales').textContent = clientes.reduce((sum, c) => sum + (c.total_chatbots || 0), 0);
+}
+
+// =====================================================
+// CERRAR SESIÓN
+// =====================================================
+function cerrarSesion(){
+  if(!confirm('¿Cerrar sesión de administrador?')) return;
+  localStorage.removeItem('servix_token');
+  localStorage.removeItem('servix_cliente');
+  localStorage.removeItem('servix_admin_viewing');
+  localStorage.removeItem('servix_admin_viewing_id');
+  window.location.href = '/';
+}
+</script>
+
+</body>
+</html>
