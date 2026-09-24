@@ -56,15 +56,21 @@ h1,h2,h3{font-family:'Poppins',sans-serif;font-weight:600;}
   text-decoration:none;
 }
 .header .logo .simbolo{
-  width:40px;
-  height:40px;
+  width:44px;
+  height:44px;
   background:#ffffff;
   border-radius:10px;
   display:flex;
   align-items:center;
   justify-content:center;
-  color:var(--azul-header);
-  font-size:22px;
+  overflow:hidden;
+  padding:2px;
+}
+.header .logo .simbolo img{
+  width:100%;
+  height:100%;
+  object-fit:contain;
+  border-radius:8px;
 }
 .header .acciones{
   display:flex;
@@ -108,16 +114,21 @@ h1,h2,h3{font-family:'Poppins',sans-serif;font-weight:600;}
   margin-bottom:32px;
 }
 .hero .logo-grande .simbolo-grande{
-  width:110px;
-  height:110px;
-  background:linear-gradient(135deg,#e8f0fc, #d4e3fb);
+  width:130px;
+  height:130px;
+  background:#ffffff;
   border-radius:24px;
   display:flex;
   align-items:center;
   justify-content:center;
-  font-size:56px;
-  color:var(--azul-header);
   margin-bottom:8px;
+  overflow:hidden;
+  padding:4px;
+}
+.hero .logo-grande .simbolo-grande img{
+  width:100%;
+  height:100%;
+  object-fit:contain;
 }
 .hero .logo-grande .nombre{
   font-family:'Poppins',sans-serif;
@@ -323,15 +334,20 @@ h1,h2,h3{font-family:'Poppins',sans-serif;font-weight:600;}
   margin-bottom:6px;
 }
 .modal-head .logo-modal .simbolo-modal{
-  width:38px;
-  height:38px;
-  background:var(--azul-header);
+  width:44px;
+  height:44px;
+  background:#ffffff;
   border-radius:9px;
   display:flex;
   align-items:center;
   justify-content:center;
-  color:#ffffff;
-  font-size:20px;
+  overflow:hidden;
+  padding:2px;
+}
+.modal-head .logo-modal .simbolo-modal img{
+  width:100%;
+  height:100%;
+  object-fit:contain;
 }
 .modal-head .logo-modal .texto-modal{
   font-family:'Poppins',sans-serif;
@@ -492,9 +508,10 @@ h1,h2,h3{font-family:'Poppins',sans-serif;font-weight:600;}
   .hero{padding:60px 20px 70px;}
   .hero h1{font-size:32px;}
   .hero .subtitulo{font-size:16px;}
-  .hero .logo-grande .simbolo-grande{width:90px;height:90px;font-size:46px;}
+  .hero .logo-grande .simbolo-grande{width:100px;height:100px;}
   .hero .logo-grande .nombre{font-size:26px;}
   .header{padding:14px 18px;}
+  .header .logo .simbolo{width:38px;height:38px;}
   .btn-login{display:none;}
   .menu-drawer{width:280px;}
   .cookies-banner{padding:14px 16px;}
@@ -507,7 +524,7 @@ h1,h2,h3{font-family:'Poppins',sans-serif;font-weight:600;}
 <!-- ================= HEADER ================= -->
 <header class="header">
   <a href="/" class="logo">
-    <div class="simbolo"><i class="bi bi-robot"></i></div>
+    <div class="simbolo"><img src="/logo.jpg" alt="SERVIX"></div>
     SERVIX
   </a>
   <div class="acciones">
@@ -519,7 +536,7 @@ h1,h2,h3{font-family:'Poppins',sans-serif;font-weight:600;}
 <!-- ================= HERO ================= -->
 <section class="hero">
   <div class="logo-grande">
-    <div class="simbolo-grande"><i class="bi bi-robot"></i></div>
+    <div class="simbolo-grande"><img src="/logo.jpg" alt="SERVIX"></div>
     <div class="nombre">SERVIX</div>
     <div class="tagline">CHATBOT INTELIGENTE</div>
   </div>
@@ -569,7 +586,7 @@ h1,h2,h3{font-family:'Poppins',sans-serif;font-weight:600;}
 
     <div class="modal-head">
       <div class="logo-modal">
-        <div class="simbolo-modal"><i class="bi bi-robot"></i></div>
+        <div class="simbolo-modal"><img src="/logo.jpg" alt="SERVIX"></div>
         <div class="texto-modal">SERVIX</div>
       </div>
     </div>
@@ -727,8 +744,12 @@ async function enviarLogin(e){
     localStorage.setItem('servix_token', data.token);
     localStorage.setItem('servix_cliente', JSON.stringify(data.cliente));
 
-    // Redirigir al Portal
-    window.location.href = '/portal/index.html';
+    // Redirigir según tipo de usuario
+    if (data.cliente.email === 'admin@servix.com') {
+      window.location.href = '/portal-admin.html';
+    } else {
+      window.location.href = '/portal-cliente.html';
+    }
 
   } catch(err) {
     console.error(err);
@@ -785,8 +806,12 @@ async function enviarRegistro(e){
     localStorage.setItem('servix_token', data.token);
     localStorage.setItem('servix_cliente', JSON.stringify(data.cliente));
 
-    // Redirigir al Portal
-    window.location.href = '/portal/index.html';
+    // Redirigir según tipo de usuario
+    if (data.cliente.email === 'admin@servix.com') {
+      window.location.href = '/portal-admin.html';
+    } else {
+      window.location.href = '/portal-cliente.html';
+    }
 
   } catch(err) {
     console.error(err);
