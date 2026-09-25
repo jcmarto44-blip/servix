@@ -48,18 +48,18 @@ h1,h2,h3{font-family:'Poppins',sans-serif;font-weight:600;}
 .header .logo{
   display:flex;
   align-items:center;
-  gap:12px;
+  gap:14px;
   color:#ffffff;
   font-family:'Poppins',sans-serif;
   font-weight:600;
-  font-size:22px;
+  font-size:24px;
   text-decoration:none;
 }
 .header .logo .simbolo{
-  width:55px;
-  height:55px;
+  width:75px;
+  height:75px;
   background:#ffffff;
-  border-radius:12px;
+  border-radius:14px;
   display:flex;
   align-items:center;
   justify-content:center;
@@ -71,7 +71,7 @@ h1,h2,h3{font-family:'Poppins',sans-serif;font-weight:600;}
   width:100%;
   height:100%;
   object-fit:contain;
-  border-radius:9px;
+  border-radius:11px;
 }
 .header .acciones{
   display:flex;
@@ -115,8 +115,8 @@ h1,h2,h3{font-family:'Poppins',sans-serif;font-weight:600;}
   margin-bottom:32px;
 }
 .hero .logo-grande .simbolo-grande{
-  width:200px;
-  height:200px;
+  width:220px;
+  height:220px;
   background:#ffffff;
   border-radius:24px;
   display:flex;
@@ -267,9 +267,7 @@ h1,h2,h3{font-family:'Poppins',sans-serif;font-weight:600;}
   overflow-y:auto;
 }
 .menu-drawer .menu-item{
-  display:flex;
-  align-items:center;
-  gap:14px;
+  display:block;
   padding:14px 22px;
   color:var(--texto-oscuro);
   text-decoration:none;
@@ -278,12 +276,6 @@ h1,h2,h3{font-family:'Poppins',sans-serif;font-weight:600;}
   transition:background .15s;
 }
 .menu-drawer .menu-item:hover{background:var(--gris-bg);}
-.menu-drawer .menu-item i{
-  color:var(--azul-header);
-  font-size:18px;
-  width:22px;
-  text-align:center;
-}
 .menu-drawer .menu-sep{
   height:1px;
   background:var(--gris-borde);
@@ -331,14 +323,14 @@ h1,h2,h3{font-family:'Poppins',sans-serif;font-weight:600;}
   display:flex;
   align-items:center;
   justify-content:center;
-  gap:10px;
+  gap:12px;
   margin-bottom:6px;
 }
 .modal-head .logo-modal .simbolo-modal{
-  width:60px;
-  height:60px;
+  width:70px;
+  height:70px;
   background:#ffffff;
-  border-radius:11px;
+  border-radius:12px;
   display:flex;
   align-items:center;
   justify-content:center;
@@ -350,12 +342,12 @@ h1,h2,h3{font-family:'Poppins',sans-serif;font-weight:600;}
   width:100%;
   height:100%;
   object-fit:contain;
-  border-radius:8px;
+  border-radius:9px;
 }
 .modal-head .logo-modal .texto-modal{
   font-family:'Poppins',sans-serif;
   font-weight:700;
-  font-size:22px;
+  font-size:24px;
   color:var(--azul-header);
   letter-spacing:.5px;
 }
@@ -452,6 +444,155 @@ h1,h2,h3{font-family:'Poppins',sans-serif;font-weight:600;}
 }
 .mensaje-error.visible{display:block;}
 
+/* ============ MODAL SERVIX (informativo) ============ */
+.servix-modal-box{
+  background:#ffffff;
+  border-radius:16px;
+  width:100%;
+  max-width:560px;
+  min-height:480px;
+  box-shadow:0 20px 60px rgba(0,0,0,.35);
+  overflow:hidden;
+  position:relative;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  padding:40px 32px;
+}
+.servix-modal-box .logo-fondo{
+  position:absolute;
+  inset:0;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  opacity:.15;
+  pointer-events:none;
+  user-select:none;
+}
+.servix-modal-box .logo-fondo img{
+  width:90%;
+  height:90%;
+  object-fit:contain;
+  filter:blur(1px);
+}
+.servix-modal-box .servix-contenido{
+  position:relative;
+  z-index:2;
+  text-align:center;
+  width:100%;
+}
+.servix-modal-box .servix-titulo{
+  font-family:'Poppins',sans-serif;
+  font-weight:700;
+  font-size:36px;
+  color:var(--azul-header);
+  letter-spacing:2px;
+  margin-bottom:20px;
+}
+.servix-modal-box .servix-texto{
+  font-size:17px;
+  color:var(--texto-oscuro);
+  line-height:1.6;
+  max-width:440px;
+  margin:0 auto 32px;
+}
+.servix-modal-box .servix-lista{
+  display:flex;
+  flex-direction:column;
+  gap:10px;
+  align-items:center;
+  margin-bottom:8px;
+}
+.servix-modal-box .servix-lista .plan{
+  font-family:'Poppins',sans-serif;
+  font-weight:600;
+  font-size:20px;
+  color:var(--azul-header);
+  letter-spacing:2px;
+}
+
+/* ============ MODAL FAQ ============ */
+.faq-modal-box{
+  background:#ffffff;
+  border-radius:16px;
+  width:100%;
+  max-width:560px;
+  max-height:80vh;
+  box-shadow:0 20px 60px rgba(0,0,0,.35);
+  overflow:hidden;
+  position:relative;
+  display:flex;
+  flex-direction:column;
+}
+.faq-modal-box .faq-head{
+  padding:24px 28px 16px;
+  border-bottom:1px solid var(--gris-borde);
+}
+.faq-modal-box .faq-head h3{
+  font-family:'Poppins',sans-serif;
+  font-weight:600;
+  font-size:20px;
+  color:var(--texto-oscuro);
+}
+.faq-modal-box .faq-body{
+  padding:8px 28px 24px;
+  overflow-y:auto;
+  flex:1;
+}
+.faq-item{
+  border-bottom:1px solid var(--gris-borde);
+}
+.faq-item:last-child{border-bottom:none;}
+.faq-pregunta{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  padding:16px 0;
+  font-size:15px;
+  font-weight:600;
+  color:var(--texto-oscuro);
+  cursor:pointer;
+  user-select:none;
+  transition:color .15s;
+}
+.faq-pregunta:hover{color:var(--azul-boton);}
+.faq-pregunta .flecha{
+  font-size:14px;
+  color:var(--texto-secundario);
+  transition:transform .2s;
+  flex-shrink:0;
+  margin-left:12px;
+}
+.faq-item.open .faq-pregunta .flecha{
+  transform:rotate(90deg);
+}
+.faq-respuesta{
+  display:none;
+  padding:0 0 16px;
+  font-size:14px;
+  color:var(--texto-secundario);
+  line-height:1.6;
+}
+.faq-item.open .faq-respuesta{
+  display:block;
+}
+.faq-contacto{
+  margin-top:20px;
+  padding-top:20px;
+  border-top:1px solid var(--gris-borde);
+  text-align:center;
+  font-size:14px;
+  color:var(--texto-secundario);
+}
+.faq-contacto b{
+  color:var(--texto-oscuro);
+}
+.faq-contacto a{
+  color:var(--azul-boton);
+  text-decoration:none;
+  font-weight:600;
+}
+
 /* ============ BANNER COOKIES ============ */
 .cookies-banner{
   position:fixed;
@@ -511,14 +652,19 @@ h1,h2,h3{font-family:'Poppins',sans-serif;font-weight:600;}
   .hero{padding:60px 24px 80px;}
   .hero h1{font-size:34px;}
   .hero .subtitulo{font-size:17px;}
-  .hero .logo-grande .simbolo-grande{width:160px;height:160px;padding:5px;}
+  .hero .logo-grande .simbolo-grande{width:180px;height:180px;padding:5px;}
   .hero .logo-grande .nombre{font-size:28px;}
   .header{padding:16px 22px;}
-  .header .logo{font-size:20px;gap:10px;}
-  .header .logo .simbolo{width:50px;height:50px;}
+  .header .logo{font-size:22px;gap:12px;}
+  .header .logo .simbolo{width:65px;height:65px;}
   .btn-login{display:none;}
   .menu-drawer{width:280px;}
-  .modal-head .logo-modal .simbolo-modal{width:55px;height:55px;}
+  .modal-head .logo-modal .simbolo-modal{width:62px;height:62px;}
+  .servix-modal-box{max-width:92vw;min-height:420px;padding:32px 24px;}
+  .servix-modal-box .servix-titulo{font-size:30px;}
+  .servix-modal-box .servix-texto{font-size:15.5px;}
+  .servix-modal-box .servix-lista .plan{font-size:18px;}
+  .faq-modal-box{max-width:92vw;}
   .cookies-banner{padding:14px 16px;}
   .cookies-banner .botones{width:100%;justify-content:flex-end;}
 }
@@ -528,18 +674,27 @@ h1,h2,h3{font-family:'Poppins',sans-serif;font-weight:600;}
   .hero{padding:40px 18px 60px;}
   .hero h1{font-size:26px;}
   .hero .subtitulo{font-size:15px;margin-bottom:30px;}
-  .hero .logo-grande .simbolo-grande{width:120px;height:120px;padding:4px;border-radius:18px;}
+  .hero .logo-grande .simbolo-grande{width:140px;height:140px;padding:4px;border-radius:18px;}
   .hero .logo-grande .nombre{font-size:22px;}
   .hero .logo-grande .tagline{font-size:10px;letter-spacing:2px;}
   .btn-registrar{padding:14px 32px;font-size:15px;}
   .header{padding:12px 16px;}
-  .header .logo{font-size:17px;gap:8px;}
-  .header .logo .simbolo{width:42px;height:42px;border-radius:10px;}
+  .header .logo{font-size:19px;gap:10px;}
+  .header .logo .simbolo{width:55px;height:55px;border-radius:11px;}
   .btn-menu{font-size:24px;}
   .menu-drawer{width:260px;}
-  .modal-head .logo-modal .simbolo-modal{width:48px;height:48px;}
-  .modal-head .logo-modal .texto-modal{font-size:19px;}
+  .modal-head .logo-modal .simbolo-modal{width:55px;height:55px;}
+  .modal-head .logo-modal .texto-modal{font-size:20px;}
   .modal-body{padding:20px 22px 24px;}
+  .servix-modal-box{min-height:360px;padding:24px 18px;}
+  .servix-modal-box .servix-titulo{font-size:26px;letter-spacing:1px;}
+  .servix-modal-box .servix-texto{font-size:14.5px;}
+  .servix-modal-box .servix-lista .plan{font-size:16px;letter-spacing:1.5px;}
+  .faq-modal-box .faq-head{padding:20px 20px 12px;}
+  .faq-modal-box .faq-head h3{font-size:18px;}
+  .faq-modal-box .faq-body{padding:6px 20px 20px;}
+  .faq-pregunta{font-size:14px;padding:14px 0;}
+  .faq-respuesta{font-size:13px;}
   .footer{padding:30px 20px 20px;}
   .footer .redes a{font-size:22px;}
   .footer .legales{font-size:13px;}
@@ -601,13 +756,12 @@ h1,h2,h3{font-family:'Poppins',sans-serif;font-weight:600;}
     <button class="cerrar" onclick="cerrarMenu()">✕</button>
   </div>
   <div class="menu-body">
-    <a class="menu-item" href="/"><i class="bi bi-house"></i> Inicio</a>
-    <a class="menu-item" href="#como-funciona"><i class="bi bi-info-circle"></i> Cómo funciona</a>
-    <a class="menu-item" href="#precios"><i class="bi bi-tag"></i> Precios</a>
-    <a class="menu-item" href="/ayuda"><i class="bi bi-question-circle"></i> Ayuda</a>
+    <a class="menu-item" onclick="cerrarMenu()">Inicio</a>
+    <a class="menu-item" onclick="cerrarMenu();abrirModalServix()">SERVIX</a>
+    <a class="menu-item" onclick="cerrarMenu();abrirModalFAQ()">Preguntas Frecuentes</a>
     <div class="menu-sep"></div>
-    <a class="menu-item" onclick="cerrarMenu();abrirModal('login')"><i class="bi bi-box-arrow-in-right"></i> Iniciar sesión</a>
-    <a class="menu-item" onclick="cerrarMenu();abrirModal('registro')"><i class="bi bi-person-plus"></i> Registrarse</a>
+    <a class="menu-item" onclick="cerrarMenu();abrirModal('login')">Iniciar sesión</a>
+    <a class="menu-item" onclick="cerrarMenu();abrirModal('registro')">Registrarse</a>
   </div>
 </div>
 
@@ -673,6 +827,131 @@ h1,h2,h3{font-family:'Poppins',sans-serif;font-weight:600;}
   </div>
 </div>
 
+<!-- ================= MODAL SERVIX ================= -->
+<div class="modal-overlay" id="modalServix" onclick="if(event.target===this)cerrarModalServix()">
+  <div class="servix-modal-box">
+    <div class="logo-fondo">
+      <img src="/logo.jpg" alt="">
+    </div>
+    <div class="servix-contenido">
+      <div class="servix-titulo">SERVIX</div>
+      <div class="servix-texto">SERVIX atiende a tus clientes en todo momento: 24 horas, 7 días a la semana.</div>
+      <div class="servix-lista">
+        <div class="plan">STARTER</div>
+        <div class="plan">PRO</div>
+        <div class="plan">BUSINESS</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ================= MODAL FAQ ================= -->
+<div class="modal-overlay" id="modalFAQ" onclick="if(event.target===this)cerrarModalFAQ()">
+  <div class="faq-modal-box">
+    <div class="faq-head">
+      <h3>Preguntas Frecuentes</h3>
+    </div>
+    <div class="faq-body">
+
+      <div class="faq-item">
+        <div class="faq-pregunta" onclick="toggleFAQ(this)">
+          <span>¿Cuánto cuesta?</span>
+          <span class="flecha">▶</span>
+        </div>
+        <div class="faq-respuesta">
+          Starter $220 USD · Pro $480 USD · Business $650 USD. Pago trimestral.
+        </div>
+      </div>
+
+      <div class="faq-item">
+        <div class="faq-pregunta" onclick="toggleFAQ(this)">
+          <span>¿Hay prueba gratis?</span>
+          <span class="flecha">▶</span>
+        </div>
+        <div class="faq-respuesta">
+          Sí. Al registrarte tienes 7 días gratis con el plan Starter. No pedimos tarjeta. Al terminar, decides si continúas.
+        </div>
+      </div>
+
+      <div class="faq-item">
+        <div class="faq-pregunta" onclick="toggleFAQ(this)">
+          <span>¿Necesito programar?</span>
+          <span class="flecha">▶</span>
+        </div>
+        <div class="faq-respuesta">
+          Te damos las instrucciones necesarias paso a paso.
+        </div>
+      </div>
+
+      <div class="faq-item">
+        <div class="faq-pregunta" onclick="toggleFAQ(this)">
+          <span>¿Funciona en mi web?</span>
+          <span class="flecha">▶</span>
+        </div>
+        <div class="faq-respuesta">
+          Sí. Funciona en cualquier web o plataforma.
+        </div>
+      </div>
+
+      <div class="faq-item">
+        <div class="faq-pregunta" onclick="toggleFAQ(this)">
+          <span>¿Cómo pago?</span>
+          <span class="flecha">▶</span>
+        </div>
+        <div class="faq-respuesta">
+          Por transferencia bancaria. Al terminar tu prueba, te enviamos los datos para activar tu plan.
+        </div>
+      </div>
+
+      <div class="faq-item">
+        <div class="faq-pregunta" onclick="toggleFAQ(this)">
+          <span>¿Mis datos están seguros?</span>
+          <span class="flecha">▶</span>
+        </div>
+        <div class="faq-respuesta">
+          Sí. Tu cuenta y tus conversaciones son privadas. No compartimos información con terceros.
+        </div>
+      </div>
+
+      <div class="faq-item">
+        <div class="faq-pregunta" onclick="toggleFAQ(this)">
+          <span>¿Puedo cancelar?</span>
+          <span class="flecha">▶</span>
+        </div>
+        <div class="faq-respuesta">
+          Sí. No hay contratos ni compromisos. Puedes cancelar cuando lo necesites.
+        </div>
+      </div>
+
+      <div class="faq-item">
+        <div class="faq-pregunta" onclick="toggleFAQ(this)">
+          <span>¿Qué diferencia hay entre planes?</span>
+          <span class="flecha">▶</span>
+        </div>
+        <div class="faq-respuesta">
+          Starter responde solo con reglas que tú enseñas. Pro y Business incluyen inteligencia artificial que responde preguntas más complejas automáticamente.
+        </div>
+      </div>
+
+      <div class="faq-item">
+        <div class="faq-pregunta" onclick="toggleFAQ(this)">
+          <span>¿Cuánto tarda en funcionar?</span>
+          <span class="flecha">▶</span>
+        </div>
+        <div class="faq-respuesta">
+          Una vez confirmado tu pago, activamos tu plan en menos de 24 horas.
+        </div>
+      </div>
+
+      <div class="faq-contacto">
+        ¿No encontraste tu respuesta?<br>
+        Escríbenos a <a href="mailto:soporte@servix.com">soporte@servix.com</a>
+      </div>
+
+    </div>
+  </div>
+</div>
+
 <!-- ================= BANNER COOKIES ================= -->
 <div class="cookies-banner" id="cookiesBanner">
   <div class="texto">
@@ -706,7 +985,7 @@ function cerrarMenu(){
 }
 
 // =====================================================
-// MODAL
+// MODAL AUTH (LOGIN / REGISTRO)
 // =====================================================
 
 function abrirModal(tab){
@@ -734,6 +1013,40 @@ function mostrarError(msg){
 }
 function ocultarError(){
   document.getElementById('mensajeError').classList.remove('visible');
+}
+
+// =====================================================
+// MODAL SERVIX
+// =====================================================
+
+function abrirModalServix(){
+  document.getElementById('modalServix').classList.add('open');
+}
+function cerrarModalServix(){
+  document.getElementById('modalServix').classList.remove('open');
+}
+
+// =====================================================
+// MODAL FAQ
+// =====================================================
+
+function abrirModalFAQ(){
+  document.getElementById('modalFAQ').classList.add('open');
+}
+function cerrarModalFAQ(){
+  document.getElementById('modalFAQ').classList.remove('open');
+}
+function toggleFAQ(el){
+  const item = el.parentElement;
+  const abierto = item.classList.contains('open');
+
+  /* Cerrar todos */
+  document.querySelectorAll('.faq-item').forEach(i => i.classList.remove('open'));
+
+  /* Si estaba cerrado, abrirlo */
+  if(!abierto){
+    item.classList.add('open');
+  }
 }
 
 // =====================================================
@@ -872,6 +1185,8 @@ document.addEventListener('keydown', (e)=>{
   if(e.key==='Escape'){
     cerrarModal();
     cerrarMenu();
+    cerrarModalServix();
+    cerrarModalFAQ();
   }
 });
 
