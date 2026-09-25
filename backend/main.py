@@ -23,7 +23,7 @@ import requests
 # CONFIGURACIÓN INICIAL
 # =====================================================
 
-app = FastAPI(title="SERVIX API", version="1.0.1")
+app = FastAPI(title="SERVIX API", version="1.0.2")
 
 # NOTA: el widget de chat debe poder llamar a esta API desde CUALQUIER
 # dominio (la web de cada cliente), así que dejamos el origen abierto.
@@ -90,6 +90,10 @@ def limpiar_html(texto: str) -> str:
 
 def verificar_admin(cliente: dict) -> bool:
     return cliente.get('email') == 'admin@servix.com'
+
+def plan_permite_ia(plan: Optional[str]) -> bool:
+    """Devuelve True solo si el plan permite usar IA (Gemini)."""
+    return plan in ('pro', 'business')
 
 # =====================================================
 # AUTENTICACIÓN
@@ -188,7 +192,7 @@ class MiCuentaUpdate(BaseModel):
 
 @app.get("/")
 def inicio():
-    return {"mensaje": "SERVIX API funcionando", "version": "1.0.1", "estado": "ok"}
+    return {"mensaje": "SERVIX API funcionando", "version": "1.0.2", "estado": "ok"}
 
 @app.get("/health")
 def health():
@@ -391,6 +395,15 @@ def crear_chatbot(data: ChatbotCreate, cliente = Depends(get_current_cliente)):
     if data.modo not in ['reglas', 'ia', 'mixto']:
         raise HTTPException(status_code=400, detail="Modo inválido. Debe ser: reglas, ia o mixto")
 
+    # ==========================================
+    # NUEVO: modo IA solo para Pro/Business
+    # ==========================================
+    if data.modo in ('ia', 'mixto') and not plan_permite_ia(cliente.get('plan')):
+        raise HTTPException(
+            status_code=403,
+            detail="El modo IA está disponible solo en los planes Pro y Business. Mejora tu plan para usarlo."
+        )
+
     conn = None
     try:
         conn = get_connection()
@@ -485,6 +498,15 @@ def obtener_chatbot(chatbot_id: int, cliente = Depends(get_current_cliente)):
 def actualizar_chatbot(chatbot_id: int, data: ChatbotUpdate, cliente = Depends(get_current_cliente)):
     if data.modo and data.modo not in ['reglas', 'ia', 'mixto']:
         raise HTTPException(status_code=400, detail="Modo inválido")
+
+    # ==========================================
+    # NUEVO: modo IA solo para Pro/Business
+    # ==========================================
+    if data.modo in ('ia', 'mixto') and not plan_permite_ia(cliente.get('plan')):
+        raise HTTPException(
+            status_code=403,
+            detail="El modo IA está disponible solo en los planes Pro y Business. Mejora tu plan para usarlo."
+        )
 
     conn = None
     try:
@@ -1071,10 +1093,7 @@ def obtener_widget(token: str):
         if conn:
             conn.close()
 
-# ---- ESTE ES EL ENDPOINT NUEVO: sirve el widget.js embebible ----
-# El portal-cliente.html genera: <script src="{API_URL}/widget/{token}.js"></script>
-# Esta ruta genera ese archivo JS al vuelo, ya con el token y la URL
-# de la API incrustados, y lo manda con el content-type correcto.
+# ---- Sirve el widget.js embebible ----
 
 WIDGET_JS_TEMPLATE = r"""
 (function () {
@@ -1229,10 +1248,18 @@ def chat(token: str, data: MensajeChat, request: Request):
         conn = get_connection()
         cursor = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
 
+        # ==========================================
+        # Traemos también el plan, estado y fin de prueba del dueño
+        # ==========================================
         cursor.execute("""
-            SELECT id, modo, activo, cliente_id
-            FROM chatbots
-            WHERE token = %s
+            SELECT ch.id, ch.modo, ch.activo, ch.cliente_id,
+                   c.plan as cliente_plan,
+                   c.estado as cliente_estado,
+                   c.activo as cliente_activo,
+                   c.fecha_fin_prueba as cliente_fin_prueba
+            FROM chatbots ch
+            JOIN clientes c ON c.id = ch.cliente_id
+            WHERE ch.token = %s
         """, (token,))
         chatbot = cursor.fetchone()
 
@@ -1242,10 +1269,19 @@ def chat(token: str, data: MensajeChat, request: Request):
         if not chatbot['activo']:
             raise HTTPException(status_code=403, detail="Este chatbot está desactivado")
 
-        cursor.execute("SELECT activo FROM clientes WHERE id = %s", (chatbot['cliente_id'],))
-        dueno = cursor.fetchone()
-        if dueno and not dueno['activo']:
+        if not chatbot['cliente_activo']:
             raise HTTPException(status_code=403, detail="Este chatbot no está disponible temporalmente")
+
+        # ==========================================
+        # NUEVO: auto-suspender si la prueba venció
+        # ==========================================
+        if chatbot['cliente_estado'] == 'prueba' and chatbot['cliente_fin_prueba']:
+            if chatbot['cliente_fin_prueba'] < datetime.utcnow():
+                cursor.execute("""
+                    UPDATE clientes SET activo = FALSE, estado = 'suspendido' WHERE id = %s
+                """, (chatbot['cliente_id'],))
+                conn.commit()
+                raise HTTPException(status_code=403, detail="La prueba gratuita ha terminado. Contacta a soporte para activar tu plan.")
 
         mensaje = data.mensaje.strip()
         if not mensaje or len(mensaje) > 500:
@@ -1256,14 +1292,20 @@ def chat(token: str, data: MensajeChat, request: Request):
         respuesta = ""
         modo_respuesta = "reglas"
 
+        # 1) Buscar en reglas siempre (todos los planes)
         if chatbot['modo'] in ['reglas', 'mixto']:
             respuesta = buscar_en_reglas(cursor, chatbot['id'], mensaje)
             if respuesta:
                 modo_respuesta = "reglas"
 
+        # 2) IA SOLO si el plan lo permite (pro o business)
         if not respuesta and chatbot['modo'] in ['ia', 'mixto']:
-            respuesta = consultar_gemini(mensaje, chatbot['cliente_id'])
-            modo_respuesta = "ia"
+            if plan_permite_ia(chatbot['cliente_plan']):
+                respuesta = consultar_gemini(mensaje, chatbot['cliente_id'])
+                modo_respuesta = "ia"
+            else:
+                # El dueño está en starter o prueba: no se usa IA
+                respuesta = "Lo siento, no tengo una respuesta para eso. Intenta con otra pregunta."
 
         if not respuesta:
             respuesta = "Lo siento, no tengo una respuesta para eso. Intenta con otra pregunta."
