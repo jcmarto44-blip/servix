@@ -3,7 +3,7 @@ SERVIX - Backend principal
 Plataforma de chatbots inteligentes para negocios
 """
 
-from fastapi import FastAPI, HTTPException, Header, Depends, Request
+from fastapi import FastAPI, HTTPException, Header, Depends, Request, UploadFile, File
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse, Response
 from typing import Optional, List
@@ -23,12 +23,8 @@ import requests
 # CONFIGURACIÓN INICIAL
 # =====================================================
 
-app = FastAPI(title="SERVIX API", version="1.0.3")
+app = FastAPI(title="SERVIX API", version="1.0.4")
 
-# NOTA: el widget de chat debe poder llamar a esta API desde CUALQUIER
-# dominio (la web de cada cliente), así que dejamos el origen abierto.
-# Como no usamos cookies (solo Bearer token), allow_credentials=False
-# es seguro y compatible con allow_origins="*".
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -45,9 +41,6 @@ SUPABASE_SERVICE_KEY = (os.getenv("SUPABASE_SERVICE_KEY") or "").strip()
 GEMINI_API_KEY = (os.getenv("GEMINI_API_KEY") or "").strip()
 DATABASE_URL = (os.getenv("DATABASE_URL") or "").strip()
 
-# URL pública de esta misma API, usada dentro del widget.js generado.
-# Si cambias de dominio/host, actualiza esta constante (o ponla en
-# una variable de entorno API_PUBLIC_URL).
 API_PUBLIC_URL = (os.getenv("API_PUBLIC_URL") or "https://servix-9i0u.onrender.com").strip().rstrip("/")
 
 # =====================================================
@@ -60,14 +53,17 @@ def get_connection():
     return psycopg2.connect(DATABASE_URL)
 
 # =====================================================
-# AUTO-CREACIÓN DE TABLA CONFIGURACION
+# AUTO-MIGRACIONES (al arrancar)
 # =====================================================
 
-def inicializar_configuracion():
-    """Crea la tabla 'configuracion' si no existe y asegura una fila id=1."""
+def inicializar_base_datos():
+    """Crea tabla configuracion y agrega columnas nuevas a chatbots si no existen."""
+    conn = None
     try:
         conn = get_connection()
         cursor = conn.cursor()
+
+        # Tabla configuracion (ya existía)
         cursor.execute("""
             CREATE TABLE IF NOT EXISTS configuracion (
                 id SERIAL PRIMARY KEY,
@@ -85,10 +81,32 @@ def inicializar_configuracion():
                 INSERT INTO configuracion (id, banco, clabe, beneficiario, email_soporte, mensaje_extra)
                 VALUES (1, '', '', '', '', '')
             """)
+
+        # Nuevas columnas en chatbots
+        columnas = [
+            ("logo_url", "VARCHAR(500)"),
+            ("color_burbuja", "VARCHAR(20) DEFAULT '#2e6fd9'"),
+            ("color_header", "VARCHAR(20) DEFAULT '#2e6fd9'"),
+            ("color_texto_header", "VARCHAR(20) DEFAULT '#ffffff'"),
+            ("color_msg_bot", "VARCHAR(20) DEFAULT '#ffffff'"),
+            ("color_msg_user", "VARCHAR(20) DEFAULT '#2e6fd9'"),
+            ("mensaje_despedida", "TEXT DEFAULT ''"),
+            ("url_privacidad", "VARCHAR(500) DEFAULT '/privacidad'"),
+        ]
+
+        for nombre, tipo in columnas:
+            try:
+                cursor.execute(f"ALTER TABLE chatbots ADD COLUMN IF NOT EXISTS {nombre} {tipo}")
+            except Exception as e:
+                logging.warning(f"No se pudo agregar columna {nombre}: {e}")
+                conn.rollback()
+                conn = get_connection()
+                cursor = conn.cursor()
+
         conn.commit()
-        logging.info("Tabla 'configuracion' lista.")
+        logging.info("Base de datos inicializada correctamente.")
     except Exception as e:
-        logging.error(f"Error inicializando tabla configuracion: {str(e)}")
+        logging.error(f"Error inicializando base de datos: {str(e)}")
     finally:
         try:
             if conn:
@@ -98,7 +116,7 @@ def inicializar_configuracion():
 
 @app.on_event("startup")
 def on_startup():
-    inicializar_configuracion()
+    inicializar_base_datos()
 
 # =====================================================
 # FUNCIONES AUXILIARES
@@ -133,8 +151,45 @@ def verificar_admin(cliente: dict) -> bool:
     return cliente.get('email') == 'admin@servix.com'
 
 def plan_permite_ia(plan: Optional[str]) -> bool:
-    """Devuelve True solo si el plan permite usar IA (Gemini)."""
     return plan in ('pro', 'business')
+
+def subir_a_supabase(nombre_archivo: str, contenido: bytes, content_type: str) -> Optional[str]:
+    """Sube un archivo al bucket 'logos' de Supabase Storage y devuelve la URL pública."""
+    if not SUPABASE_URL or not SUPABASE_SERVICE_KEY:
+        logging.error("Supabase no configurado (URL o SERVICE_KEY faltantes)")
+        return None
+
+    try:
+        url = f"{SUPABASE_URL}/storage/v1/object/logos/{nombre_archivo}"
+        headers = {
+            "Authorization": f"Bearer {SUPABASE_SERVICE_KEY}",
+            "Content-Type": content_type,
+            "x-upsert": "true"
+        }
+        r = requests.post(url, headers=headers, data=contenido, timeout=30)
+        if r.status_code not in (200, 201):
+            logging.error(f"Error subiendo a Supabase: {r.status_code} - {r.text}")
+            return None
+
+        # URL pública
+        url_publica = f"{SUPABASE_URL}/storage/v1/object/public/logos/{nombre_archivo}"
+        return url_publica
+    except Exception as e:
+        logging.error(f"Excepción subiendo a Supabase: {str(e)}")
+        return None
+
+def eliminar_de_supabase(nombre_archivo: str) -> bool:
+    """Elimina un archivo del bucket 'logos' de Supabase Storage."""
+    if not SUPABASE_URL or not SUPABASE_SERVICE_KEY:
+        return False
+    try:
+        url = f"{SUPABASE_URL}/storage/v1/object/logos/{nombre_archivo}"
+        headers = {"Authorization": f"Bearer {SUPABASE_SERVICE_KEY}"}
+        r = requests.delete(url, headers=headers, timeout=15)
+        return r.status_code in (200, 204)
+    except Exception as e:
+        logging.error(f"Excepción eliminando de Supabase: {str(e)}")
+        return False
 
 # =====================================================
 # AUTENTICACIÓN
@@ -196,6 +251,13 @@ class ChatbotUpdate(BaseModel):
     color_texto: Optional[str] = None
     posicion: Optional[str] = None
     activo: Optional[bool] = None
+    color_burbuja: Optional[str] = None
+    color_header: Optional[str] = None
+    color_texto_header: Optional[str] = None
+    color_msg_bot: Optional[str] = None
+    color_msg_user: Optional[str] = None
+    mensaje_despedida: Optional[str] = None
+    url_privacidad: Optional[str] = None
 
 class ReglaCreate(BaseModel):
     chatbot_id: int
@@ -240,7 +302,7 @@ class ConfiguracionUpdate(BaseModel):
 
 @app.get("/")
 def inicio():
-    return {"mensaje": "SERVIX API funcionando", "version": "1.0.3", "estado": "ok"}
+    return {"mensaje": "SERVIX API funcionando", "version": "1.0.4", "estado": "ok"}
 
 @app.get("/health")
 def health():
@@ -430,13 +492,7 @@ def admin_obtener_configuracion(cliente = Depends(get_current_cliente)):
         """)
         cfg = cursor.fetchone()
         if not cfg:
-            return {
-                "success": True,
-                "configuracion": {
-                    "banco": "", "clabe": "", "beneficiario": "",
-                    "email_soporte": "", "mensaje_extra": ""
-                }
-            }
+            return {"success": True, "configuracion": {"banco": "", "clabe": "", "beneficiario": "", "email_soporte": "", "mensaje_extra": ""}}
         if cfg.get('fecha_actualizacion'):
             cfg['fecha_actualizacion'] = cfg['fecha_actualizacion'].isoformat()
         return {"success": True, "configuracion": dict(cfg)}
@@ -458,35 +514,22 @@ def admin_actualizar_configuracion(data: ConfiguracionUpdate, cliente = Depends(
         valores = []
 
         if data.banco is not None:
-            campos.append("banco = %s")
-            valores.append(limpiar_html(data.banco))
-
+            campos.append("banco = %s"); valores.append(limpiar_html(data.banco))
         if data.clabe is not None:
-            campos.append("clabe = %s")
-            valores.append(limpiar_html(data.clabe))
-
+            campos.append("clabe = %s"); valores.append(limpiar_html(data.clabe))
         if data.beneficiario is not None:
-            campos.append("beneficiario = %s")
-            valores.append(limpiar_html(data.beneficiario))
-
+            campos.append("beneficiario = %s"); valores.append(limpiar_html(data.beneficiario))
         if data.email_soporte is not None:
-            campos.append("email_soporte = %s")
-            valores.append(limpiar_html(data.email_soporte))
-
+            campos.append("email_soporte = %s"); valores.append(limpiar_html(data.email_soporte))
         if data.mensaje_extra is not None:
-            campos.append("mensaje_extra = %s")
-            valores.append(data.mensaje_extra)
+            campos.append("mensaje_extra = %s"); valores.append(data.mensaje_extra)
 
         if not campos:
             raise HTTPException(status_code=400, detail="No hay campos para actualizar")
 
         campos.append("fecha_actualizacion = NOW()")
 
-        cursor.execute(f"""
-            UPDATE configuracion
-            SET {', '.join(campos)}
-            WHERE id = 1
-        """, valores)
+        cursor.execute(f"UPDATE configuracion SET {', '.join(campos)} WHERE id = 1", valores)
         conn.commit()
 
         return {"success": True, "mensaje": "Datos de contratación actualizados"}
@@ -501,26 +544,14 @@ def admin_actualizar_configuracion(data: ConfiguracionUpdate, cliente = Depends(
 
 @app.get("/api/configuracion-publica")
 def obtener_configuracion_publica():
-    """Endpoint público: cualquier cliente (loggeado o no) puede leer los datos
-    de contratación para mostrarlos en el modal de pago."""
     conn = None
     try:
         conn = get_connection()
         cursor = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
-        cursor.execute("""
-            SELECT banco, clabe, beneficiario, email_soporte, mensaje_extra
-            FROM configuracion
-            WHERE id = 1
-        """)
+        cursor.execute("SELECT banco, clabe, beneficiario, email_soporte, mensaje_extra FROM configuracion WHERE id = 1")
         cfg = cursor.fetchone()
         if not cfg:
-            return {
-                "success": True,
-                "configuracion": {
-                    "banco": "", "clabe": "", "beneficiario": "",
-                    "email_soporte": "", "mensaje_extra": ""
-                }
-            }
+            return {"success": True, "configuracion": {"banco": "", "clabe": "", "beneficiario": "", "email_soporte": "", "mensaje_extra": ""}}
         return {"success": True, "configuracion": dict(cfg)}
     finally:
         if conn:
@@ -537,7 +568,10 @@ def listar_chatbots(cliente = Depends(get_current_cliente)):
         conn = get_connection()
         cursor = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
         cursor.execute("""
-            SELECT id, nombre, mensaje_bienvenida, color_primario, color_texto,
+            SELECT id, nombre, mensaje_bienvenida, mensaje_despedida,
+                   color_primario, color_texto, color_burbuja, color_header,
+                   color_texto_header, color_msg_bot, color_msg_user,
+                   logo_url, url_privacidad,
                    posicion, modo, token, activo, fecha_creacion
             FROM chatbots
             WHERE cliente_id = %s
@@ -559,22 +593,15 @@ def crear_chatbot(data: ChatbotCreate, cliente = Depends(get_current_cliente)):
     if data.modo not in ['reglas', 'ia', 'mixto']:
         raise HTTPException(status_code=400, detail="Modo inválido. Debe ser: reglas, ia o mixto")
 
-    # Modo IA solo para Pro/Business
     if data.modo in ('ia', 'mixto') and not plan_permite_ia(cliente.get('plan')):
-        raise HTTPException(
-            status_code=403,
-            detail="El modo IA está disponible solo en los planes Pro y Business. Mejora tu plan para usarlo."
-        )
+        raise HTTPException(status_code=403, detail="El modo IA está disponible solo en los planes Pro y Business. Mejora tu plan para usarlo.")
 
     conn = None
     try:
         conn = get_connection()
         cursor = conn.cursor()
 
-        cursor.execute("""
-            SELECT COUNT(*) FROM chatbots
-            WHERE cliente_id = %s AND activo = TRUE
-        """, (cliente['id'],))
+        cursor.execute("SELECT COUNT(*) FROM chatbots WHERE cliente_id = %s AND activo = TRUE", (cliente['id'],))
         cantidad_actual = cursor.fetchone()[0]
 
         limite = 1
@@ -584,10 +611,7 @@ def crear_chatbot(data: ChatbotCreate, cliente = Depends(get_current_cliente)):
             limite = 10
 
         if cantidad_actual >= limite:
-            raise HTTPException(
-                status_code=400,
-                detail=f"Tu plan permite máximo {limite} chatbot(s). Mejora tu plan para crear más."
-            )
+            raise HTTPException(status_code=400, detail=f"Tu plan permite máximo {limite} chatbot(s). Mejora tu plan para crear más.")
 
         token_chatbot = generar_token_chatbot()
 
@@ -615,12 +639,7 @@ def crear_chatbot(data: ChatbotCreate, cliente = Depends(get_current_cliente)):
         return {
             "success": True,
             "mensaje": "Chatbot creado correctamente",
-            "chatbot": {
-                "id": nuevo[0],
-                "nombre": nuevo[1],
-                "token": nuevo[2],
-                "modo": nuevo[3]
-            }
+            "chatbot": {"id": nuevo[0], "nombre": nuevo[1], "token": nuevo[2], "modo": nuevo[3]}
         }
     except HTTPException:
         raise
@@ -638,7 +657,10 @@ def obtener_chatbot(chatbot_id: int, cliente = Depends(get_current_cliente)):
         conn = get_connection()
         cursor = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
         cursor.execute("""
-            SELECT id, nombre, mensaje_bienvenida, color_primario, color_texto,
+            SELECT id, nombre, mensaje_bienvenida, mensaje_despedida,
+                   color_primario, color_texto, color_burbuja, color_header,
+                   color_texto_header, color_msg_bot, color_msg_user,
+                   logo_url, url_privacidad,
                    posicion, modo, token, activo, fecha_creacion
             FROM chatbots
             WHERE id = %s AND cliente_id = %s
@@ -662,26 +684,29 @@ def actualizar_chatbot(chatbot_id: int, data: ChatbotUpdate, cliente = Depends(g
         raise HTTPException(status_code=400, detail="Modo inválido")
 
     if data.modo in ('ia', 'mixto') and not plan_permite_ia(cliente.get('plan')):
-        raise HTTPException(
-            status_code=403,
-            detail="El modo IA está disponible solo en los planes Pro y Business. Mejora tu plan para usarlo."
-        )
+        raise HTTPException(status_code=403, detail="El modo IA está disponible solo en los planes Pro y Business. Mejora tu plan para usarlo.")
 
     conn = None
     try:
         conn = get_connection()
         cursor = conn.cursor()
 
-        cursor.execute("SELECT id FROM chatbots WHERE id = %s AND cliente_id = %s",
-                       (chatbot_id, cliente['id']))
+        cursor.execute("SELECT id FROM chatbots WHERE id = %s AND cliente_id = %s", (chatbot_id, cliente['id']))
         if not cursor.fetchone():
             raise HTTPException(status_code=404, detail="Chatbot no encontrado")
+
+        # Campos que NO se limpian HTML
+        campos_crudos = [
+            'color_primario', 'color_texto', 'modo', 'posicion',
+            'color_burbuja', 'color_header', 'color_texto_header',
+            'color_msg_bot', 'color_msg_user', 'url_privacidad'
+        ]
 
         campos = []
         valores = []
         for campo, valor in data.dict(exclude_unset=True).items():
             if valor is not None:
-                if campo in ['color_primario', 'color_texto', 'modo', 'posicion']:
+                if campo in campos_crudos:
                     campos.append(f"{campo} = %s")
                     valores.append(valor)
                 elif campo == 'activo':
@@ -697,11 +722,7 @@ def actualizar_chatbot(chatbot_id: int, data: ChatbotUpdate, cliente = Depends(g
         valores.append(chatbot_id)
         valores.append(cliente['id'])
 
-        cursor.execute(f"""
-            UPDATE chatbots
-            SET {', '.join(campos)}
-            WHERE id = %s AND cliente_id = %s
-        """, valores)
+        cursor.execute(f"UPDATE chatbots SET {', '.join(campos)} WHERE id = %s AND cliente_id = %s", valores)
         conn.commit()
 
         return {"success": True, "mensaje": "Chatbot actualizado"}
@@ -720,12 +741,90 @@ def eliminar_chatbot(chatbot_id: int, cliente = Depends(get_current_cliente)):
     try:
         conn = get_connection()
         cursor = conn.cursor()
-        cursor.execute("DELETE FROM chatbots WHERE id = %s AND cliente_id = %s",
-                       (chatbot_id, cliente['id']))
+        cursor.execute("DELETE FROM chatbots WHERE id = %s AND cliente_id = %s", (chatbot_id, cliente['id']))
         if cursor.rowcount == 0:
             raise HTTPException(status_code=404, detail="Chatbot no encontrado")
         conn.commit()
         return {"success": True, "mensaje": "Chatbot eliminado"}
+    finally:
+        if conn:
+            conn.close()
+
+# =====================================================
+# SUBIR / ELIMINAR LOGO DEL CHATBOT
+# =====================================================
+
+@app.post("/api/chatbots/{chatbot_id}/logo")
+async def subir_logo_chatbot(chatbot_id: int, file: UploadFile = File(...), cliente = Depends(get_current_cliente)):
+    """Sube el logo del chatbot a Supabase Storage (bucket 'logos')."""
+    conn = None
+    try:
+        conn = get_connection()
+        cursor = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+
+        cursor.execute("SELECT id FROM chatbots WHERE id = %s AND cliente_id = %s", (chatbot_id, cliente['id']))
+        if not cursor.fetchone():
+            raise HTTPException(status_code=404, detail="Chatbot no encontrado")
+
+        # Validar tipo
+        if file.content_type not in ('image/jpeg', 'image/png', 'image/webp', 'image/svg+xml'):
+            raise HTTPException(status_code=400, detail="Formato no permitido. Usa JPG, PNG, WEBP o SVG.")
+
+        contenido = await file.read()
+
+        # Validar tamaño (2 MB)
+        if len(contenido) > 2 * 1024 * 1024:
+            raise HTTPException(status_code=400, detail="El archivo supera los 2 MB.")
+
+        # Nombre único
+        ext = file.filename.split('.')[-1].lower() if '.' in file.filename else 'png'
+        nombre = f"chatbot_{chatbot_id}_{secrets.token_hex(6)}.{ext}"
+
+        # Subir a Supabase
+        url = subir_a_supabase(nombre, contenido, file.content_type)
+        if not url:
+            raise HTTPException(status_code=500, detail="No se pudo subir el logo a Supabase.")
+
+        # Guardar en BD
+        cursor.execute("UPDATE chatbots SET logo_url = %s WHERE id = %s", (url, chatbot_id))
+        conn.commit()
+
+        return {"success": True, "mensaje": "Logo subido correctamente", "logo_url": url}
+    except HTTPException:
+        raise
+    except Exception as e:
+        logging.error(f"Error subiendo logo: {str(e)}")
+        raise HTTPException(status_code=500, detail="Error al subir el logo")
+    finally:
+        if conn:
+            conn.close()
+
+@app.delete("/api/chatbots/{chatbot_id}/logo")
+def eliminar_logo_chatbot(chatbot_id: int, cliente = Depends(get_current_cliente)):
+    """Elimina el logo del chatbot."""
+    conn = None
+    try:
+        conn = get_connection()
+        cursor = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+
+        cursor.execute("SELECT logo_url FROM chatbots WHERE id = %s AND cliente_id = %s", (chatbot_id, cliente['id']))
+        row = cursor.fetchone()
+        if not row:
+            raise HTTPException(status_code=404, detail="Chatbot no encontrado")
+
+        if row.get('logo_url'):
+            nombre = row['logo_url'].split('/')[-1]
+            eliminar_de_supabase(nombre)
+
+        cursor.execute("UPDATE chatbots SET logo_url = NULL WHERE id = %s", (chatbot_id,))
+        conn.commit()
+
+        return {"success": True, "mensaje": "Logo eliminado"}
+    except HTTPException:
+        raise
+    except Exception as e:
+        logging.error(f"Error eliminando logo: {str(e)}")
+        raise HTTPException(status_code=500, detail="Error al eliminar el logo")
     finally:
         if conn:
             conn.close()
@@ -741,8 +840,7 @@ def listar_reglas(chatbot_id: int, cliente = Depends(get_current_cliente)):
         conn = get_connection()
         cursor = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
 
-        cursor.execute("SELECT id FROM chatbots WHERE id = %s AND cliente_id = %s",
-                       (chatbot_id, cliente['id']))
+        cursor.execute("SELECT id FROM chatbots WHERE id = %s AND cliente_id = %s", (chatbot_id, cliente['id']))
         if not cursor.fetchone():
             raise HTTPException(status_code=404, detail="Chatbot no encontrado")
 
@@ -773,8 +871,7 @@ def crear_regla(data: ReglaCreate, cliente = Depends(get_current_cliente)):
         conn = get_connection()
         cursor = conn.cursor()
 
-        cursor.execute("SELECT id FROM chatbots WHERE id = %s AND cliente_id = %s",
-                       (data.chatbot_id, cliente['id']))
+        cursor.execute("SELECT id FROM chatbots WHERE id = %s AND cliente_id = %s", (data.chatbot_id, cliente['id']))
         if not cursor.fetchone():
             raise HTTPException(status_code=404, detail="Chatbot no encontrado")
 
@@ -788,10 +885,7 @@ def crear_regla(data: ReglaCreate, cliente = Depends(get_current_cliente)):
             limite = 99999
 
         if cantidad >= limite:
-            raise HTTPException(
-                status_code=400,
-                detail=f"Tu plan permite máximo {limite} reglas por chatbot."
-            )
+            raise HTTPException(status_code=400, detail=f"Tu plan permite máximo {limite} reglas por chatbot.")
 
         cursor.execute("""
             INSERT INTO reglas (chatbot_id, pregunta, palabras_clave, respuesta, orden)
@@ -838,11 +932,9 @@ def actualizar_regla(regla_id: int, data: ReglaUpdate, cliente = Depends(get_cur
         for campo, valor in data.dict(exclude_unset=True).items():
             if valor is not None:
                 if campo == 'activa':
-                    campos.append(f"{campo} = %s")
-                    valores.append(valor)
+                    campos.append(f"{campo} = %s"); valores.append(valor)
                 else:
-                    campos.append(f"{campo} = %s")
-                    valores.append(limpiar_html(valor))
+                    campos.append(f"{campo} = %s"); valores.append(limpiar_html(valor))
 
         if not campos:
             raise HTTPException(status_code=400, detail="No hay campos para actualizar")
@@ -975,18 +1067,10 @@ def admin_cambiar_estado(cliente_id: int, data: EstadoUpdate, cliente = Depends(
 
         nuevo_estado = 'activo' if data.activo else 'suspendido'
 
-        cursor.execute("""
-            UPDATE clientes
-            SET activo = %s, estado = %s
-            WHERE id = %s
-        """, (data.activo, nuevo_estado, cliente_id))
+        cursor.execute("UPDATE clientes SET activo = %s, estado = %s WHERE id = %s", (data.activo, nuevo_estado, cliente_id))
         conn.commit()
 
-        return {
-            "success": True,
-            "mensaje": f"Cliente {'activado' if data.activo else 'suspendido'} correctamente",
-            "estado": nuevo_estado
-        }
+        return {"success": True, "mensaje": f"Cliente {'activado' if data.activo else 'suspendido'} correctamente", "estado": nuevo_estado}
     finally:
         if conn:
             conn.close()
@@ -1009,18 +1093,10 @@ def admin_cambiar_plan(cliente_id: int, data: PlanUpdate, cliente = Depends(get_
         if not row:
             raise HTTPException(status_code=404, detail="Cliente no encontrado")
 
-        cursor.execute("""
-            UPDATE clientes
-            SET plan = %s, estado = 'activo', activo = TRUE
-            WHERE id = %s
-        """, (data.plan, cliente_id))
+        cursor.execute("UPDATE clientes SET plan = %s, estado = 'activo', activo = TRUE WHERE id = %s", (data.plan, cliente_id))
         conn.commit()
 
-        return {
-            "success": True,
-            "mensaje": f"Plan cambiado a {data.plan.upper()} correctamente",
-            "plan": data.plan
-        }
+        return {"success": True, "mensaje": f"Plan cambiado a {data.plan.upper()} correctamente", "plan": data.plan}
     finally:
         if conn:
             conn.close()
@@ -1068,45 +1144,30 @@ def admin_actualizar_mi_cuenta(data: MiCuentaUpdate, cliente = Depends(get_curre
         valores = []
 
         if data.nombre_completo is not None:
-            campos.append("nombre_completo = %s")
-            valores.append(limpiar_html(data.nombre_completo))
-
+            campos.append("nombre_completo = %s"); valores.append(limpiar_html(data.nombre_completo))
         if data.negocio is not None:
-            campos.append("negocio = %s")
-            valores.append(limpiar_html(data.negocio))
-
+            campos.append("negocio = %s"); valores.append(limpiar_html(data.negocio))
         if data.telefono is not None:
-            campos.append("telefono = %s")
-            valores.append(limpiar_html(data.telefono))
-
+            campos.append("telefono = %s"); valores.append(limpiar_html(data.telefono))
         if data.plan is not None:
             if data.plan not in ['starter', 'pro', 'business']:
                 raise HTTPException(status_code=400, detail="Plan inválido")
-            campos.append("plan = %s")
-            valores.append(data.plan)
-
+            campos.append("plan = %s"); valores.append(data.plan)
         if data.estado is not None:
             if data.estado not in ['prueba', 'activo', 'suspendido', 'cancelado']:
                 raise HTTPException(status_code=400, detail="Estado inválido")
-            campos.append("estado = %s")
-            valores.append(data.estado)
-
+            campos.append("estado = %s"); valores.append(data.estado)
         if data.password is not None:
             if len(data.password) < 6:
                 raise HTTPException(status_code=400, detail="La contraseña debe tener al menos 6 caracteres")
-            campos.append("password_hash = %s")
-            valores.append(hash_password(data.password))
+            campos.append("password_hash = %s"); valores.append(hash_password(data.password))
 
         if not campos:
             raise HTTPException(status_code=400, detail="No hay campos para actualizar")
 
         valores.append(cliente['id'])
 
-        cursor.execute(f"""
-            UPDATE clientes
-            SET {', '.join(campos)}
-            WHERE id = %s
-        """, valores)
+        cursor.execute(f"UPDATE clientes SET {', '.join(campos)} WHERE id = %s", valores)
         conn.commit()
 
         return {"success": True, "mensaje": "Tu cuenta fue actualizada correctamente"}
@@ -1237,7 +1298,10 @@ def obtener_widget(token: str):
         conn = get_connection()
         cursor = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
         cursor.execute("""
-            SELECT id, nombre, mensaje_bienvenida, color_primario, color_texto,
+            SELECT id, nombre, mensaje_bienvenida, mensaje_despedida,
+                   color_primario, color_texto, color_burbuja, color_header,
+                   color_texto_header, color_msg_bot, color_msg_user,
+                   logo_url, url_privacidad,
                    posicion, modo, activo
             FROM chatbots
             WHERE token = %s
@@ -1252,7 +1316,7 @@ def obtener_widget(token: str):
         if conn:
             conn.close()
 
-# ---- Sirve el widget.js embebible ----
+# ---- Widget JS embebible v2 ----
 
 WIDGET_JS_TEMPLATE = r"""
 (function () {
@@ -1261,6 +1325,7 @@ WIDGET_JS_TEMPLATE = r"""
   var config = null;
   var sessionId = null;
   var isOpen = false;
+  var avisoCerrado = false;
 
   function el(tag, styleText, html) {
     var e = document.createElement(tag);
@@ -1282,19 +1347,31 @@ WIDGET_JS_TEMPLATE = r"""
 
   function buildWidget() {
     var side = config.posicion === "izquierda" ? "left" : "right";
-    var primario = config.color_primario || "#2e6fd9";
-    var texto = config.color_texto || "#ffffff";
+    var colorBurbuja = config.color_burbuja || config.color_primario || "#2e6fd9";
+    var colorHeader = config.color_header || config.color_primario || "#2e6fd9";
+    var colorTextoHeader = config.color_texto_header || config.color_texto || "#ffffff";
+    var colorMsgBot = config.color_msg_bot || "#ffffff";
+    var colorMsgUser = config.color_msg_user || config.color_primario || "#2e6fd9";
+    var logo = config.logo_url || "";
+    var urlPrivacidad = config.url_privacidad || "/privacidad";
+    var msgDespedida = config.mensaje_despedida || "";
+
+    // ---- Burbuja flotante ----
+    var bubbleContent = '<svg width="26" height="26" viewBox="0 0 24 24" fill="#ffffff">' +
+      '<path d="M12 2C6.48 2 2 6.03 2 11c0 2.4 1.05 4.57 2.77 6.15L4 22l5.05-1.35C10 20.86 11 21 12 21c5.52 0 10-4.03 10-9s-4.48-10-10-10z"/></svg>';
 
     var bubble = el("div",
       "position:fixed;bottom:20px;" + side + ":20px;width:60px;height:60px;" +
-      "border-radius:50%;background:" + primario + ";box-shadow:0 4px 16px rgba(0,0,0,.25);" +
+      "border-radius:50%;background:" + colorBurbuja + ";box-shadow:0 4px 16px rgba(0,0,0,.25);" +
       "display:flex;align-items:center;justify-content:center;cursor:pointer;z-index:999999;" +
       "transition:transform .2s;",
-      '<svg width="26" height="26" viewBox="0 0 24 24" fill="' + texto + '">' +
-      '<path d="M12 2C6.48 2 2 6.03 2 11c0 2.4 1.05 4.57 2.77 6.15L4 22l5.05-1.35C10 20.86 11 21 12 21c5.52 0 10-4.03 10-9s-4.48-10-10-10z"/></svg>'
+      bubbleContent
     );
     bubble.id = "servix-bubble";
+    bubble.onmouseenter = function () { bubble.style.transform = "scale(1.08)"; };
+    bubble.onmouseleave = function () { bubble.style.transform = "scale(1)"; };
 
+    // ---- Ventana del chat ----
     var win = el("div",
       "position:fixed;bottom:92px;" + side + ":20px;width:340px;max-width:92vw;" +
       "height:460px;max-height:70vh;background:#fff;border-radius:14px;" +
@@ -1303,16 +1380,24 @@ WIDGET_JS_TEMPLATE = r"""
     );
     win.id = "servix-window";
 
+    // Header
+    var headerInner = "";
+    if (logo) {
+      headerInner += '<img src="' + logo + '" style="width:36px;height:36px;object-fit:contain;background:#fff;border-radius:8px;padding:2px;margin-right:10px;flex-shrink:0;">';
+    }
+    headerInner += '<span style="flex:1;font-weight:bold;font-size:15px;">' + (config.nombre || "Chat") + '</span>';
+    headerInner += '<span id="servix-close" style="cursor:pointer;font-size:18px;padding:0 4px;">&#10005;</span>';
+
     var header = el("div",
-      "background:" + primario + ";color:" + texto + ";padding:14px 16px;font-weight:bold;font-size:15px;",
-      (config.nombre || "Chat")
+      "display:flex;align-items:center;background:" + colorHeader + ";color:" + colorTextoHeader + ";padding:12px 14px;",
+      headerInner
     );
 
-    var body = el("div",
-      "flex:1;overflow-y:auto;padding:12px;background:#f7f8fa;display:flex;flex-direction:column;"
-    );
+    // Body
+    var body = el("div", "flex:1;overflow-y:auto;padding:12px;background:#f7f8fa;display:flex;flex-direction:column;");
     body.id = "servix-body";
 
+    // Input
     var inputWrap = el("div", "display:flex;border-top:1px solid #e5e7eb;padding:8px;gap:6px;background:#fff;");
     var input = document.createElement("input");
     input.type = "text";
@@ -1320,26 +1405,67 @@ WIDGET_JS_TEMPLATE = r"""
     input.style.cssText = "flex:1;border:1px solid #d3d8de;border-radius:8px;padding:9px 10px;font-size:14px;outline:none;";
 
     var sendBtn = el("button",
-      "background:" + primario + ";color:" + texto + ";border:none;border-radius:8px;padding:0 16px;cursor:pointer;font-weight:bold;font-size:16px;",
+      "background:" + colorHeader + ";color:" + colorTextoHeader + ";border:none;border-radius:8px;padding:0 16px;cursor:pointer;font-weight:bold;font-size:16px;",
       "&#10148;"
     );
 
     inputWrap.appendChild(input);
     inputWrap.appendChild(sendBtn);
+
+    // Footer (aviso de privacidad)
+    var footer = el("div",
+      "display:flex;align-items:center;justify-content:space-between;padding:6px 12px;background:#fff;border-top:1px solid #e5e7eb;font-size:11px;color:#7a8794;",
+      '<a href="' + urlPrivacidad + '" target="_blank" style="color:#7a8794;text-decoration:underline;">Aviso de privacidad</a>' +
+      '<span id="servix-aviso-x" style="cursor:pointer;padding:0 4px;">&#10005;</span>'
+    );
+    footer.id = "servix-footer";
+
     win.appendChild(header);
     win.appendChild(body);
     win.appendChild(inputWrap);
+    win.appendChild(footer);
 
     document.body.appendChild(bubble);
     document.body.appendChild(win);
 
-    addMessage(config.mensaje_bienvenida || "\u00a1Hola! \u00bfEn qu\u00e9 te ayudo?", "bot");
+    addMessage(config.mensaje_bienvenida || "¡Hola! ¿En qué te ayudo?", "bot");
 
+    // Abrir/cerrar
     bubble.onclick = function () {
       isOpen = !isOpen;
       win.style.display = isOpen ? "flex" : "none";
       if (isOpen) input.focus();
     };
+
+    // Cerrar aviso de privacidad
+    var avisoX = document.getElementById("servix-aviso-x");
+    if (avisoX) {
+      avisoX.onclick = function () {
+        avisoCerrado = true;
+        footer.style.display = "none";
+      };
+    }
+
+    // Cerrar chat con confirmación
+    var closeBtn = document.getElementById("servix-close");
+    if (closeBtn) {
+      closeBtn.onclick = function (e) {
+        e.stopPropagation();
+        var confirmar = window.confirm("¿Deseas finalizar el chat?\n\nAceptar = FINALIZAR\nCancelar = CONTINUAR");
+        if (confirmar) {
+          if (msgDespedida) {
+            addMessage(msgDespedida, "bot");
+          }
+          setTimeout(function () {
+            sessionId = null;
+            body.innerHTML = "";
+            addMessage(config.mensaje_bienvenida || "¡Hola! ¿En qué te ayudo?", "bot");
+            win.style.display = "none";
+            isOpen = false;
+          }, 800);
+        }
+      };
+    }
 
     function addMessage(text, from) {
       var isBot = from === "bot";
@@ -1348,8 +1474,8 @@ WIDGET_JS_TEMPLATE = r"""
         "max-width:78%;margin-bottom:10px;padding:9px 12px;border-radius:12px;" +
         "font-size:14px;line-height:1.4;word-wrap:break-word;" +
         (isBot
-          ? "background:#fff;color:#1e2733;border:1px solid #e5e7eb;align-self:flex-start;"
-          : "background:" + primario + ";color:" + texto + ";align-self:flex-end;");
+          ? "background:" + colorMsgBot + ";color:#1e2733;border:1px solid #e5e7eb;align-self:flex-start;"
+          : "background:" + colorMsgUser + ";color:#ffffff;align-self:flex-end;");
       msg.textContent = text;
       body.appendChild(msg);
       body.scrollTop = body.scrollHeight;
@@ -1373,7 +1499,7 @@ WIDGET_JS_TEMPLATE = r"""
           addMessage(data.respuesta || "...", "bot");
         })
         .catch(function () {
-          addMessage("Error de conexi\u00f3n. Intenta de nuevo.", "bot");
+          addMessage("Error de conexión. Intenta de nuevo.", "bot");
         })
         .finally(function () {
           input.disabled = false;
@@ -1430,9 +1556,7 @@ def chat(token: str, data: MensajeChat, request: Request):
 
         if chatbot['cliente_estado'] == 'prueba' and chatbot['cliente_fin_prueba']:
             if chatbot['cliente_fin_prueba'] < datetime.utcnow():
-                cursor.execute("""
-                    UPDATE clientes SET activo = FALSE, estado = 'suspendido' WHERE id = %s
-                """, (chatbot['cliente_id'],))
+                cursor.execute("UPDATE clientes SET activo = FALSE, estado = 'suspendido' WHERE id = %s", (chatbot['cliente_id'],))
                 conn.commit()
                 raise HTTPException(status_code=403, detail="La prueba gratuita ha terminado. Contacta a soporte para activar tu plan.")
 
@@ -1461,18 +1585,12 @@ def chat(token: str, data: MensajeChat, request: Request):
             respuesta = "Lo siento, no tengo una respuesta para eso. Intenta con otra pregunta."
 
         cursor.execute("""
-            INSERT INTO conversaciones (
-                chatbot_id, sesion_id, mensaje, respuesta, modo_respuesta
-            )
+            INSERT INTO conversaciones (chatbot_id, sesion_id, mensaje, respuesta, modo_respuesta)
             VALUES (%s, %s, %s, %s, %s)
         """, (chatbot['id'], sesion_id, mensaje, respuesta, modo_respuesta))
         conn.commit()
 
-        return {
-            "respuesta": respuesta,
-            "sesion_id": sesion_id,
-            "modo": modo_respuesta
-        }
+        return {"respuesta": respuesta, "sesion_id": sesion_id, "modo": modo_respuesta}
     except HTTPException:
         raise
     except Exception as e:
@@ -1513,15 +1631,8 @@ def consultar_gemini(mensaje: str, cliente_id: int) -> str:
         url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key={GEMINI_API_KEY}"
 
         payload = {
-            "contents": [{
-                "parts": [{
-                    "text": f"Eres un asistente amable de atención al cliente. Responde de forma breve y clara en español. Pregunta del cliente: {mensaje}"
-                }]
-            }],
-            "generationConfig": {
-                "maxOutputTokens": 200,
-                "temperature": 0.7
-            }
+            "contents": [{"parts": [{"text": f"Eres un asistente amable de atención al cliente. Responde de forma breve y clara en español. Pregunta del cliente: {mensaje}"}]}],
+            "generationConfig": {"maxOutputTokens": 200, "temperature": 0.7}
         }
 
         response = requests.post(url, json=payload, timeout=15)
@@ -1543,7 +1654,4 @@ def consultar_gemini(mensaje: str, cliente_id: int) -> str:
 @app.exception_handler(Exception)
 async def error_global(request: Request, exc: Exception):
     logging.error(f"Error no manejado: {str(exc)}")
-    return JSONResponse(
-        status_code=500,
-        content={"success": False, "detail": "Error interno del servidor"}
-    )
+    return JSONResponse(status_code=500, content={"success": False, "detail": "Error interno del servidor"})
