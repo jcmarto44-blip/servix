@@ -352,7 +352,7 @@ table.tabla tbody tr:hover{background:var(--gris-bg);}
   color:#9aa4b0;
   cursor:pointer;
 }
-.modal-body{padding:20px 24px;}
+.modal-body{padding:20px 24px;max-height:70vh;overflow-y:auto;}
 .modal-foot{
   padding:16px 24px;
   border-top:1px solid var(--gris-borde);
@@ -394,6 +394,112 @@ table.tabla tbody tr:hover{background:var(--gris-bg);}
   display:none;
 }
 .mensaje-error.visible{display:block;}
+
+/* Aviso modo IA bloqueado */
+.aviso-ia{
+  background:var(--gris-bg);
+  border:1px solid var(--gris-borde);
+  color:var(--texto-secundario);
+  padding:12px 14px;
+  border-radius:8px;
+  font-size:13px;
+  line-height:1.5;
+  display:flex;
+  align-items:flex-start;
+  gap:10px;
+  margin-top:6px;
+}
+.aviso-ia .ico{
+  color:var(--gris-icono);
+  font-size:16px;
+  flex-shrink:0;
+  margin-top:2px;
+}
+
+/* Modal SPEI */
+.spei-bloque{
+  display:flex;
+  gap:12px;
+  padding:10px 0;
+  border-bottom:1px solid var(--gris-borde);
+  font-size:13.5px;
+  align-items:flex-start;
+}
+.spei-bloque:last-child{border-bottom:none;}
+.spei-bloque .ico{
+  color:var(--gris-icono);
+  font-size:16px;
+  width:20px;
+  flex-shrink:0;
+  text-align:center;
+  margin-top:2px;
+}
+.spei-bloque .contenido{
+  flex:1;
+  display:flex;
+  flex-direction:column;
+  gap:2px;
+}
+.spei-bloque .k{
+  font-size:11px;
+  color:var(--texto-secundario);
+  text-transform:uppercase;
+  letter-spacing:.5px;
+  font-weight:600;
+}
+.spei-bloque .v{
+  font-size:14px;
+  color:var(--texto-oscuro);
+  font-weight:600;
+  word-break:break-all;
+}
+.spei-titulo{
+  display:flex;
+  align-items:center;
+  gap:10px;
+  padding:14px 16px;
+  background:var(--gris-bg);
+  border-radius:10px;
+  margin-bottom:14px;
+  color:var(--texto-oscuro);
+  font-weight:600;
+  font-size:15px;
+}
+.spei-titulo .ico{
+  color:var(--gris-icono);
+  font-size:22px;
+}
+.spei-pasos{
+  display:flex;
+  flex-direction:column;
+  gap:14px;
+  margin-top:10px;
+}
+.spei-paso-titulo{
+  display:flex;
+  align-items:center;
+  gap:10px;
+  font-weight:600;
+  font-size:13.5px;
+  margin-bottom:6px;
+  color:var(--texto-oscuro);
+}
+.spei-paso-titulo .ico{
+  color:var(--gris-icono);
+  font-size:16px;
+  width:20px;
+  text-align:center;
+}
+.spei-nota{
+  background:var(--gris-bg);
+  border-left:3px solid var(--gris-icono);
+  padding:10px 14px;
+  border-radius:6px;
+  font-size:13px;
+  color:var(--texto-secundario);
+  line-height:1.5;
+  margin-top:12px;
+}
 
 @media(max-width:768px){
   .sidebar{
@@ -546,7 +652,7 @@ table.tabla tbody tr:hover{background:var(--gris-bg);}
           <p style="color:#a72e21;">Motivo: Pago pendiente.</p>
           <p style="color:var(--texto-secundario);margin-top:8px;">Tu chatbot ya no está funcionando en tu web.</p>
           <div style="margin-top:16px;">
-            <button class="btn btn-primario" onclick="contactarSoporte()">💰 Pagar ahora</button>
+            <button class="btn btn-primario" onclick="contratarPlan('starter')">💰 Pagar ahora</button>
             <button class="btn btn-secundario" onclick="contactarSoporte()">📞 Contactar soporte</button>
           </div>
         </div>
@@ -664,6 +770,7 @@ table.tabla tbody tr:hover{background:var(--gris-bg);}
   </main>
 </div>
 
+<!-- ============ MODAL CREAR CHATBOT ============ -->
 <div class="modal-overlay" id="modal-chatbot" onclick="if(event.target===this)cerrarModalChatbot()">
   <div class="modal-box">
     <div class="modal-head">
@@ -676,13 +783,22 @@ table.tabla tbody tr:hover{background:var(--gris-bg);}
         <label>Nombre del chatbot</label>
         <input type="text" id="chatbot-nombre" placeholder="Ej: Mi asistente" required>
       </div>
-      <div class="form-group">
+      <div class="form-group" id="grupo-modo-chatbot">
         <label>Modo del bot</label>
         <select id="chatbot-modo">
           <option value="reglas">🅰️ Reglas (responde solo lo que le enseño)</option>
-          <option value="ia">🅱️ Solo IA (responde cualquier cosa)</option>
-          <option value="mixto">🅲 Mixto (reglas primero, IA de respaldo)</option>
+          <option value="ia" id="opt-ia">🅱️ Solo IA (responde cualquier cosa)</option>
+          <option value="mixto" id="opt-mixto">🅲 Mixto (reglas primero, IA de respaldo)</option>
         </select>
+      </div>
+      <div id="aviso-ia-bloqueada" style="display:none;">
+        <div class="aviso-ia">
+          <i class="bi bi-info-circle ico"></i>
+          <div>
+            <b>El modo IA está disponible en los planes PRO y BUSINESS.</b><br>
+            Mejora tu plan para desbloquearlo. Por ahora solo puedes crear chatbots en modo <b>Reglas</b>.
+          </div>
+        </div>
       </div>
     </div>
     <div class="modal-foot">
@@ -692,6 +808,7 @@ table.tabla tbody tr:hover{background:var(--gris-bg);}
   </div>
 </div>
 
+<!-- ============ MODAL REGLA ============ -->
 <div class="modal-overlay" id="modal-regla" onclick="if(event.target===this)cerrarModalRegla()">
   <div class="modal-box">
     <div class="modal-head">
@@ -720,12 +837,35 @@ table.tabla tbody tr:hover{background:var(--gris-bg);}
   </div>
 </div>
 
+<!-- ============ MODAL DATOS DE PAGO (SPEI) ============ -->
+<div class="modal-overlay" id="modal-pago" onclick="if(event.target===this)cerrarModalPago()">
+  <div class="modal-box">
+    <div class="modal-head">
+      <h3 id="modal-pago-titulo">Contratar plan</h3>
+      <button class="cerrar" onclick="cerrarModalPago()">✕</button>
+    </div>
+    <div class="modal-body" id="modal-pago-body">
+      <!-- contenido dinámico -->
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-primario" onclick="cerrarModalPago()">Entendido</button>
+    </div>
+  </div>
+</div>
+
 <script>
 const API_URL = "https://servix-9i0u.onrender.com";
 
 let cliente = null;
 let chatbots = [];
 let chatbotSeleccionado = null;
+
+/* Planes y sus datos */
+const PLANES = {
+  starter:  { nombre: 'Starter',  precio: '$240 USD' },
+  pro:      { nombre: 'Pro',      precio: '$480 USD' },
+  business: { nombre: 'Business', precio: '$960 USD' }
+};
 
 (async function init(){
   const token = localStorage.getItem('servix_token');
@@ -814,12 +954,27 @@ function mostrarInicioSegunEstado(){
     document.getElementById('inicio-sub').textContent = 'Resumen de tu cuenta.';
     document.getElementById('inicio-activo').style.display = 'block';
     document.getElementById('dato-plan').textContent = (cliente.plan || '').toUpperCase() || 'Activo';
+
+    /* Si ya está activo pero NO es pro/business, mostramos también las tarjetas
+       para que pueda pedir upgrade */
+    if(!planTieneIA(cliente.plan)){
+      document.getElementById('inicio-prueba').style.display = 'block';
+      /* Quitamos el aviso amarillo de "prueba" porque ya no es prueba */
+      const avisoAmarillo = document.querySelector('#inicio-prueba .card');
+      if(avisoAmarillo){
+        avisoAmarillo.style.display = 'none';
+      }
+    }
   } else if(estado === 'suspendido'){
     document.getElementById('inicio-sub').textContent = 'Tu cuenta está suspendida.';
     document.getElementById('inicio-suspendido').style.display = 'block';
   } else {
     document.getElementById('inicio-sub').textContent = '';
   }
+}
+
+function planTieneIA(plan){
+  return plan === 'pro' || plan === 'business';
 }
 
 async function cargarChatbots(){
@@ -879,6 +1034,25 @@ function abrirModalChatbot(){
   document.getElementById('chatbot-nombre').value = '';
   document.getElementById('chatbot-modo').value = 'reglas';
   document.getElementById('modal-chatbot-error').classList.remove('visible');
+
+  /* Ocultar/mostrar opciones IA según el plan */
+  const optIA = document.getElementById('opt-ia');
+  const optMixto = document.getElementById('opt-mixto');
+  const aviso = document.getElementById('aviso-ia-bloqueada');
+  const grupoModo = document.getElementById('grupo-modo-chatbot');
+
+  if(planTieneIA(cliente.plan)){
+    optIA.style.display = '';
+    optMixto.style.display = '';
+    aviso.style.display = 'none';
+    grupoModo.style.display = '';
+  } else {
+    optIA.style.display = 'none';
+    optMixto.style.display = 'none';
+    aviso.style.display = 'block';
+    /* Dejamos solo la opción "Reglas" visible */
+    grupoModo.style.display = '';
+  }
 }
 
 function cerrarModalChatbot(){
@@ -1119,8 +1293,143 @@ function cargarCuenta(){
   document.getElementById('cuenta-pago').value = cliente.proximo_pago || '—';
 }
 
-function contratarPlan(plan){
-  alert('Vas a contratar el plan ' + plan.toUpperCase() + '.\n\nPor ahora, contacta a soporte para completar el pago.');
+/* =====================================================
+   CONTRATAR PLAN — MODAL CON DATOS SPEI
+   ===================================================== */
+
+async function contratarPlan(plan){
+  const info = PLANES[plan];
+  if(!info) return;
+
+  const titulo = document.getElementById('modal-pago-titulo');
+  const body = document.getElementById('modal-pago-body');
+
+  titulo.textContent = 'Contratar plan ' + info.nombre;
+  body.innerHTML = '<p style="color:var(--texto-secundario);">Cargando datos de pago...</p>';
+
+  document.getElementById('modal-pago').classList.add('open');
+
+  /* Leer datos de configuración pública */
+  let cfg = { banco: '', clabe: '', beneficiario: '', email_soporte: '', mensaje_extra: '' };
+  try{
+    const resp = await fetch(`${API_URL}/api/configuracion-publica`);
+    if(resp.ok){
+      const data = await resp.json();
+      cfg = data.configuracion || cfg;
+    }
+  }catch(e){
+    console.error(e);
+  }
+
+  const tieneDatos = cfg.banco || cfg.clabe || cfg.beneficiario;
+
+  /* Concepto sugerido para la transferencia */
+  const concepto = info.nombre.toUpperCase() + ' - ' + (cliente.email || '');
+
+  let html = `
+    <div class="spei-titulo">
+      <i class="bi bi-credit-card ico"></i>
+      <span>${info.nombre} — ${info.precio}</span>
+    </div>
+  `;
+
+  if(tieneDatos){
+    html += `
+      <div class="spei-pasos">
+        <div>
+          <div class="spei-paso-titulo">
+            <i class="bi bi-1-circle ico"></i>
+            <span>Realiza la transferencia SPEI</span>
+          </div>
+          <div style="background:#fff;border:1px solid var(--gris-borde);border-radius:10px;padding:8px 14px;">
+            ${cfg.banco ? `
+              <div class="spei-bloque">
+                <i class="bi bi-bank ico"></i>
+                <div class="contenido">
+                  <span class="k">Banco</span>
+                  <span class="v">${cfg.banco}</span>
+                </div>
+              </div>
+            ` : ''}
+            ${cfg.clabe ? `
+              <div class="spei-bloque">
+                <i class="bi bi-hash ico"></i>
+                <div class="contenido">
+                  <span class="k">CLABE</span>
+                  <span class="v">${cfg.clabe}</span>
+                </div>
+              </div>
+            ` : ''}
+            ${cfg.beneficiario ? `
+              <div class="spei-bloque">
+                <i class="bi bi-person ico"></i>
+                <div class="contenido">
+                  <span class="k">Beneficiario</span>
+                  <span class="v">${cfg.beneficiario}</span>
+                </div>
+              </div>
+            ` : ''}
+            <div class="spei-bloque">
+              <i class="bi bi-tag ico"></i>
+              <div class="contenido">
+                <span class="k">Concepto</span>
+                <span class="v">${concepto}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div>
+          <div class="spei-paso-titulo">
+            <i class="bi bi-2-circle ico"></i>
+            <span>Envía tu comprobante</span>
+          </div>
+          <div style="background:#fff;border:1px solid var(--gris-borde);border-radius:10px;padding:8px 14px;">
+            ${cfg.email_soporte ? `
+              <div class="spei-bloque">
+                <i class="bi bi-envelope ico"></i>
+                <div class="contenido">
+                  <span class="k">Email de soporte</span>
+                  <span class="v">${cfg.email_soporte}</span>
+                </div>
+              </div>
+            ` : `
+              <div class="spei-bloque">
+                <i class="bi bi-envelope ico"></i>
+                <div class="contenido">
+                  <span class="k">Email de soporte</span>
+                  <span class="v">Contacta a soporte para más información</span>
+                </div>
+              </div>
+            `}
+          </div>
+        </div>
+
+        <div>
+          <div class="spei-paso-titulo">
+            <i class="bi bi-3-circle ico"></i>
+            <span>Activamos tu cuenta</span>
+          </div>
+          <div class="spei-nota">
+            ${cfg.mensaje_extra ? cfg.mensaje_extra : 'En cuanto recibamos tu pago, activaremos tu plan y te avisaremos por email.'}
+          </div>
+        </div>
+      </div>
+    `;
+  } else {
+    html += `
+      <div class="spei-nota" style="margin-top:0;">
+        <b>Contáctanos para completar tu pago</b><br>
+        Aún no hemos configurado los datos de pago. Escríbenos para que te enviemos la información bancaria y activemos tu plan lo antes posible.
+      </div>
+    `;
+  }
+
+  body.innerHTML = html;
+}
+
+function cerrarModalPago(){
+  document.getElementById('modal-pago').classList.remove('open');
 }
 
 function contactarSoporte(){
