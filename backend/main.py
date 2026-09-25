@@ -23,7 +23,7 @@ import requests
 # CONFIGURACIÓN INICIAL
 # =====================================================
 
-app = FastAPI(title="SERVIX API", version="1.0.2")
+app = FastAPI(title="SERVIX API", version="1.0.3")
 
 # NOTA: el widget de chat debe poder llamar a esta API desde CUALQUIER
 # dominio (la web de cada cliente), así que dejamos el origen abierto.
@@ -58,6 +58,47 @@ def get_connection():
     if not DATABASE_URL:
         raise HTTPException(status_code=503, detail="Base de datos no configurada")
     return psycopg2.connect(DATABASE_URL)
+
+# =====================================================
+# AUTO-CREACIÓN DE TABLA CONFIGURACION
+# =====================================================
+
+def inicializar_configuracion():
+    """Crea la tabla 'configuracion' si no existe y asegura una fila id=1."""
+    try:
+        conn = get_connection()
+        cursor = conn.cursor()
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS configuracion (
+                id SERIAL PRIMARY KEY,
+                banco VARCHAR(150),
+                clabe VARCHAR(50),
+                beneficiario VARCHAR(200),
+                email_soporte VARCHAR(200),
+                mensaje_extra TEXT,
+                fecha_actualizacion TIMESTAMP DEFAULT NOW()
+            )
+        """)
+        cursor.execute("SELECT COUNT(*) FROM configuracion WHERE id = 1")
+        if cursor.fetchone()[0] == 0:
+            cursor.execute("""
+                INSERT INTO configuracion (id, banco, clabe, beneficiario, email_soporte, mensaje_extra)
+                VALUES (1, '', '', '', '', '')
+            """)
+        conn.commit()
+        logging.info("Tabla 'configuracion' lista.")
+    except Exception as e:
+        logging.error(f"Error inicializando tabla configuracion: {str(e)}")
+    finally:
+        try:
+            if conn:
+                conn.close()
+        except Exception:
+            pass
+
+@app.on_event("startup")
+def on_startup():
+    inicializar_configuracion()
 
 # =====================================================
 # FUNCIONES AUXILIARES
@@ -186,13 +227,20 @@ class MiCuentaUpdate(BaseModel):
     estado: Optional[str] = None
     password: Optional[str] = None
 
+class ConfiguracionUpdate(BaseModel):
+    banco: Optional[str] = None
+    clabe: Optional[str] = None
+    beneficiario: Optional[str] = None
+    email_soporte: Optional[str] = None
+    mensaje_extra: Optional[str] = None
+
 # =====================================================
 # RAÍZ Y HEALTH
 # =====================================================
 
 @app.get("/")
 def inicio():
-    return {"mensaje": "SERVIX API funcionando", "version": "1.0.2", "estado": "ok"}
+    return {"mensaje": "SERVIX API funcionando", "version": "1.0.3", "estado": "ok"}
 
 @app.get("/health")
 def health():
@@ -363,6 +411,122 @@ def obtener_me(cliente = Depends(get_current_cliente)):
     return {"success": True, "cliente": cliente}
 
 # =====================================================
+# CONFIGURACIÓN (DATOS DE CONTRATACIÓN)
+# =====================================================
+
+@app.get("/api/admin/configuracion")
+def admin_obtener_configuracion(cliente = Depends(get_current_cliente)):
+    if not verificar_admin(cliente):
+        raise HTTPException(status_code=403, detail="Acceso denegado")
+
+    conn = None
+    try:
+        conn = get_connection()
+        cursor = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+        cursor.execute("""
+            SELECT banco, clabe, beneficiario, email_soporte, mensaje_extra, fecha_actualizacion
+            FROM configuracion
+            WHERE id = 1
+        """)
+        cfg = cursor.fetchone()
+        if not cfg:
+            return {
+                "success": True,
+                "configuracion": {
+                    "banco": "", "clabe": "", "beneficiario": "",
+                    "email_soporte": "", "mensaje_extra": ""
+                }
+            }
+        if cfg.get('fecha_actualizacion'):
+            cfg['fecha_actualizacion'] = cfg['fecha_actualizacion'].isoformat()
+        return {"success": True, "configuracion": dict(cfg)}
+    finally:
+        if conn:
+            conn.close()
+
+@app.put("/api/admin/configuracion")
+def admin_actualizar_configuracion(data: ConfiguracionUpdate, cliente = Depends(get_current_cliente)):
+    if not verificar_admin(cliente):
+        raise HTTPException(status_code=403, detail="Acceso denegado")
+
+    conn = None
+    try:
+        conn = get_connection()
+        cursor = conn.cursor()
+
+        campos = []
+        valores = []
+
+        if data.banco is not None:
+            campos.append("banco = %s")
+            valores.append(limpiar_html(data.banco))
+
+        if data.clabe is not None:
+            campos.append("clabe = %s")
+            valores.append(limpiar_html(data.clabe))
+
+        if data.beneficiario is not None:
+            campos.append("beneficiario = %s")
+            valores.append(limpiar_html(data.beneficiario))
+
+        if data.email_soporte is not None:
+            campos.append("email_soporte = %s")
+            valores.append(limpiar_html(data.email_soporte))
+
+        if data.mensaje_extra is not None:
+            campos.append("mensaje_extra = %s")
+            valores.append(data.mensaje_extra)
+
+        if not campos:
+            raise HTTPException(status_code=400, detail="No hay campos para actualizar")
+
+        campos.append("fecha_actualizacion = NOW()")
+
+        cursor.execute(f"""
+            UPDATE configuracion
+            SET {', '.join(campos)}
+            WHERE id = 1
+        """, valores)
+        conn.commit()
+
+        return {"success": True, "mensaje": "Datos de contratación actualizados"}
+    except HTTPException:
+        raise
+    except Exception as e:
+        logging.error(f"Error actualizando configuracion: {str(e)}")
+        raise HTTPException(status_code=500, detail="Error al actualizar los datos")
+    finally:
+        if conn:
+            conn.close()
+
+@app.get("/api/configuracion-publica")
+def obtener_configuracion_publica():
+    """Endpoint público: cualquier cliente (loggeado o no) puede leer los datos
+    de contratación para mostrarlos en el modal de pago."""
+    conn = None
+    try:
+        conn = get_connection()
+        cursor = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+        cursor.execute("""
+            SELECT banco, clabe, beneficiario, email_soporte, mensaje_extra
+            FROM configuracion
+            WHERE id = 1
+        """)
+        cfg = cursor.fetchone()
+        if not cfg:
+            return {
+                "success": True,
+                "configuracion": {
+                    "banco": "", "clabe": "", "beneficiario": "",
+                    "email_soporte": "", "mensaje_extra": ""
+                }
+            }
+        return {"success": True, "configuracion": dict(cfg)}
+    finally:
+        if conn:
+            conn.close()
+
+# =====================================================
 # CHATBOTS (cliente)
 # =====================================================
 
@@ -395,9 +559,7 @@ def crear_chatbot(data: ChatbotCreate, cliente = Depends(get_current_cliente)):
     if data.modo not in ['reglas', 'ia', 'mixto']:
         raise HTTPException(status_code=400, detail="Modo inválido. Debe ser: reglas, ia o mixto")
 
-    # ==========================================
-    # NUEVO: modo IA solo para Pro/Business
-    # ==========================================
+    # Modo IA solo para Pro/Business
     if data.modo in ('ia', 'mixto') and not plan_permite_ia(cliente.get('plan')):
         raise HTTPException(
             status_code=403,
@@ -499,9 +661,6 @@ def actualizar_chatbot(chatbot_id: int, data: ChatbotUpdate, cliente = Depends(g
     if data.modo and data.modo not in ['reglas', 'ia', 'mixto']:
         raise HTTPException(status_code=400, detail="Modo inválido")
 
-    # ==========================================
-    # NUEVO: modo IA solo para Pro/Business
-    # ==========================================
     if data.modo in ('ia', 'mixto') and not plan_permite_ia(cliente.get('plan')):
         raise HTTPException(
             status_code=403,
@@ -1248,9 +1407,6 @@ def chat(token: str, data: MensajeChat, request: Request):
         conn = get_connection()
         cursor = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
 
-        # ==========================================
-        # Traemos también el plan, estado y fin de prueba del dueño
-        # ==========================================
         cursor.execute("""
             SELECT ch.id, ch.modo, ch.activo, ch.cliente_id,
                    c.plan as cliente_plan,
@@ -1272,9 +1428,6 @@ def chat(token: str, data: MensajeChat, request: Request):
         if not chatbot['cliente_activo']:
             raise HTTPException(status_code=403, detail="Este chatbot no está disponible temporalmente")
 
-        # ==========================================
-        # NUEVO: auto-suspender si la prueba venció
-        # ==========================================
         if chatbot['cliente_estado'] == 'prueba' and chatbot['cliente_fin_prueba']:
             if chatbot['cliente_fin_prueba'] < datetime.utcnow():
                 cursor.execute("""
@@ -1292,19 +1445,16 @@ def chat(token: str, data: MensajeChat, request: Request):
         respuesta = ""
         modo_respuesta = "reglas"
 
-        # 1) Buscar en reglas siempre (todos los planes)
         if chatbot['modo'] in ['reglas', 'mixto']:
             respuesta = buscar_en_reglas(cursor, chatbot['id'], mensaje)
             if respuesta:
                 modo_respuesta = "reglas"
 
-        # 2) IA SOLO si el plan lo permite (pro o business)
         if not respuesta and chatbot['modo'] in ['ia', 'mixto']:
             if plan_permite_ia(chatbot['cliente_plan']):
                 respuesta = consultar_gemini(mensaje, chatbot['cliente_id'])
                 modo_respuesta = "ia"
             else:
-                # El dueño está en starter o prueba: no se usa IA
                 respuesta = "Lo siento, no tengo una respuesta para eso. Intenta con otra pregunta."
 
         if not respuesta:
