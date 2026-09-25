@@ -395,6 +395,18 @@ table.tabla tbody tr:hover{background:var(--gris-bg);}
 }
 .mensaje-error.visible{display:block;}
 
+.mensaje-exito{
+  background:#e8f5ec;
+  border:1px solid #a7d5b4;
+  color:#1d6b34;
+  padding:10px 14px;
+  border-radius:6px;
+  font-size:13px;
+  margin-bottom:14px;
+  display:none;
+}
+.mensaje-exito.visible{display:block;}
+
 /* Aviso modo IA bloqueado */
 .aviso-ia{
   background:var(--gris-bg);
@@ -501,6 +513,217 @@ table.tabla tbody tr:hover{background:var(--gris-bg);}
   margin-top:12px;
 }
 
+/* ====== PERSONALIZAR WIDGET ====== */
+.wid-layout{
+  display:grid;
+  grid-template-columns: 1fr 360px;
+  gap:20px;
+  align-items:start;
+}
+
+.wid-form label{
+  display:flex;
+  align-items:center;
+  gap:6px;
+}
+
+.wid-form .label-ico{
+  color:var(--gris-icono);
+  font-size:14px;
+}
+
+.wid-color-row{
+  display:flex;
+  align-items:center;
+  gap:10px;
+}
+.wid-color-row input[type="color"]{
+  width:52px;
+  height:38px;
+  padding:2px;
+  cursor:pointer;
+  border:1.5px solid var(--gris-borde);
+  border-radius:8px;
+  background:#fff;
+}
+.wid-color-row input[type="text"]{
+  flex:1;
+}
+
+.wid-logo-preview{
+  display:flex;
+  align-items:center;
+  gap:12px;
+  padding:10px;
+  background:var(--gris-bg);
+  border-radius:8px;
+  margin-bottom:10px;
+}
+.wid-logo-preview img{
+  width:52px;
+  height:52px;
+  object-fit:contain;
+  background:#fff;
+  border-radius:8px;
+  border:1px solid var(--gris-borde);
+  padding:4px;
+}
+.wid-logo-preview .sin-logo{
+  width:52px;
+  height:52px;
+  background:#fff;
+  border-radius:8px;
+  border:1px dashed var(--gris-borde);
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  color:var(--texto-secundario);
+  font-size:20px;
+}
+.wid-logo-preview .info{
+  flex:1;
+  font-size:12.5px;
+  color:var(--texto-secundario);
+}
+
+/* ====== VISTA PREVIA ====== */
+.wid-preview-sticky{
+  position:sticky;
+  top:80px;
+}
+.wid-preview-card{
+  background:#fff;
+  border:1px solid var(--gris-borde);
+  border-radius:12px;
+  padding:16px;
+}
+.wid-preview-card h3{
+  font-size:13px;
+  font-weight:600;
+  color:var(--texto-secundario);
+  text-transform:uppercase;
+  letter-spacing:.5px;
+  margin-bottom:12px;
+}
+.wid-mock{
+  background:#f1f4f8;
+  border-radius:12px;
+  padding:20px;
+  display:flex;
+  justify-content:center;
+  align-items:flex-end;
+  min-height:420px;
+  position:relative;
+}
+.wid-mock-ventana{
+  width:280px;
+  max-width:100%;
+  background:#fff;
+  border-radius:12px;
+  box-shadow:0 8px 24px rgba(0,0,0,.15);
+  overflow:hidden;
+  display:flex;
+  flex-direction:column;
+}
+.wid-mock-header{
+  display:flex;
+  align-items:center;
+  gap:10px;
+  padding:12px 14px;
+  font-weight:700;
+  font-size:14px;
+}
+.wid-mock-header img{
+  width:32px;
+  height:32px;
+  object-fit:contain;
+  background:#fff;
+  border-radius:6px;
+  padding:2px;
+}
+.wid-mock-header .sin-logo-mini{
+  width:32px;
+  height:32px;
+  background:rgba(255,255,255,.25);
+  border-radius:6px;
+}
+.wid-mock-body{
+  padding:12px;
+  background:#f7f8fa;
+  height:180px;
+  overflow:hidden;
+}
+.wid-mock-msg{
+  max-width:80%;
+  padding:8px 10px;
+  border-radius:10px;
+  font-size:12.5px;
+  line-height:1.4;
+  margin-bottom:8px;
+  word-wrap:break-word;
+}
+.wid-mock-msg.bot{
+  border:1px solid #e5e7eb;
+  align-self:flex-start;
+}
+.wid-mock-msg.user{
+  margin-left:auto;
+  color:#fff;
+}
+.wid-mock-input{
+  display:flex;
+  padding:8px;
+  gap:6px;
+  border-top:1px solid #e5e7eb;
+}
+.wid-mock-input input{
+  flex:1;
+  padding:6px 8px;
+  border:1px solid #d3d8de;
+  border-radius:6px;
+  font-size:12px;
+}
+.wid-mock-input button{
+  border:none;
+  border-radius:6px;
+  padding:0 12px;
+  font-weight:bold;
+  color:#fff;
+  cursor:default;
+}
+.wid-mock-footer{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  padding:6px 12px;
+  background:#fff;
+  border-top:1px solid #e5e7eb;
+  font-size:10.5px;
+  color:#7a8794;
+}
+.wid-mock-burbuja{
+  position:absolute;
+  bottom:20px;
+  width:46px;
+  height:46px;
+  border-radius:50%;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  box-shadow:0 4px 16px rgba(0,0,0,.25);
+  color:#fff;
+  font-size:20px;
+}
+
+@media(max-width:1024px){
+  .wid-layout{
+    grid-template-columns:1fr;
+  }
+  .wid-preview-sticky{
+    position:static;
+  }
+}
+
 @media(max-width:768px){
   .sidebar{
     position:fixed;
@@ -547,6 +770,9 @@ table.tabla tbody tr:hover{background:var(--gris-bg);}
     </div>
     <div class="menu-item" data-seccion="instalar" onclick="navegarA('instalar')">
       <i class="bi bi-code-square"></i> Instalar
+    </div>
+    <div class="menu-item" data-seccion="personalizar" onclick="navegarA('personalizar')">
+      <i class="bi bi-palette"></i> Personalizar widget
     </div>
     <div class="menu-item" data-seccion="cuenta" onclick="navegarA('cuenta')">
       <i class="bi bi-person"></i> Cuenta
@@ -726,6 +952,173 @@ table.tabla tbody tr:hover{background:var(--gris-bg);}
       </div>
     </section>
 
+    <!-- ============ PERSONALIZAR WIDGET ============ -->
+    <section class="seccion" id="seccion-personalizar">
+      <h1 class="page-title">Personalizar widget</h1>
+      <p class="page-sub">Personaliza el aspecto de tu chatbot: logo, colores, textos y posición.</p>
+
+      <div class="form-group" style="max-width:400px;">
+        <label>Selecciona un chatbot:</label>
+        <select id="select-chatbot-personalizar" onchange="cargarPersonalizacion()"></select>
+      </div>
+
+      <div id="personalizar-container" style="display:none;">
+
+        <div class="mensaje-exito" id="personalizar-exito"></div>
+        <div class="mensaje-error" id="personalizar-error"></div>
+
+        <div class="wid-layout">
+
+          <!-- COLUMNA IZQUIERDA: FORMULARIO -->
+          <div class="wid-form">
+
+            <!-- LOGO -->
+            <div class="card">
+              <h3 class="card-title">Logo del negocio</h3>
+              <p style="color:var(--texto-secundario);font-size:13px;margin-bottom:12px;">
+                Aparecerá en el header del chat (JPG, PNG, WEBP o SVG, máx 2MB).
+              </p>
+
+              <div class="wid-logo-preview" id="wid-logo-preview">
+                <div class="sin-logo" id="wid-logo-sin">
+                  <i class="bi bi-image"></i>
+                </div>
+                <img id="wid-logo-img" src="" style="display:none;" alt="">
+                <div class="info" id="wid-logo-info">Sin logo. Sube uno desde tu computadora.</div>
+              </div>
+
+              <div style="display:flex;gap:10px;flex-wrap:wrap;">
+                <input type="file" id="wid-logo-input" accept="image/png,image/jpeg,image/webp,image/svg+xml" style="display:none;">
+                <button class="btn btn-primario btn-chico" onclick="document.getElementById('wid-logo-input').click()">
+                  <i class="bi bi-upload"></i> Seleccionar imagen
+                </button>
+                <button class="btn btn-secundario btn-chico" id="wid-logo-eliminar" onclick="eliminarLogo()" style="display:none;">
+                  <i class="bi bi-trash"></i> Eliminar logo
+                </button>
+              </div>
+            </div>
+
+            <!-- COLORES -->
+            <div class="card">
+              <h3 class="card-title">Colores</h3>
+
+              <div class="form-group">
+                <label><i class="bi bi-circle-fill label-ico"></i> Color de la burbuja flotante</label>
+                <div class="wid-color-row">
+                  <input type="color" id="wid-color-burbuja" value="#2e6fd9" oninput="document.getElementById('wid-color-burbuja-txt').value=this.value; actualizarPreview();">
+                  <input type="text" id="wid-color-burbuja-txt" value="#2e6fd9" oninput="document.getElementById('wid-color-burbuja').value=this.value; actualizarPreview();">
+                </div>
+              </div>
+
+              <div class="form-group">
+                <label><i class="bi bi-square-fill label-ico"></i> Color del header del chat</label>
+                <div class="wid-color-row">
+                  <input type="color" id="wid-color-header" value="#2e6fd9" oninput="document.getElementById('wid-color-header-txt').value=this.value; actualizarPreview();">
+                  <input type="text" id="wid-color-header-txt" value="#2e6fd9" oninput="document.getElementById('wid-color-header').value=this.value; actualizarPreview();">
+                </div>
+              </div>
+
+              <div class="form-group">
+                <label><i class="bi bi-type label-ico"></i> Color del texto del header</label>
+                <div class="wid-color-row">
+                  <input type="color" id="wid-color-texto-header" value="#ffffff" oninput="document.getElementById('wid-color-texto-header-txt').value=this.value; actualizarPreview();">
+                  <input type="text" id="wid-color-texto-header-txt" value="#ffffff" oninput="document.getElementById('wid-color-texto-header').value=this.value; actualizarPreview();">
+                </div>
+              </div>
+
+              <div class="form-group">
+                <label><i class="bi bi-chat-left label-ico"></i> Color de los mensajes del bot</label>
+                <div class="wid-color-row">
+                  <input type="color" id="wid-color-msg-bot" value="#ffffff" oninput="document.getElementById('wid-color-msg-bot-txt').value=this.value; actualizarPreview();">
+                  <input type="text" id="wid-color-msg-bot-txt" value="#ffffff" oninput="document.getElementById('wid-color-msg-bot').value=this.value; actualizarPreview();">
+                </div>
+              </div>
+
+              <div class="form-group">
+                <label><i class="bi bi-chat-right label-ico"></i> Color de los mensajes del usuario</label>
+                <div class="wid-color-row">
+                  <input type="color" id="wid-color-msg-user" value="#2e6fd9" oninput="document.getElementById('wid-color-msg-user-txt').value=this.value; actualizarPreview();">
+                  <input type="text" id="wid-color-msg-user-txt" value="#2e6fd9" oninput="document.getElementById('wid-color-msg-user').value=this.value; actualizarPreview();">
+                </div>
+              </div>
+            </div>
+
+            <!-- TEXTOS -->
+            <div class="card">
+              <h3 class="card-title">Textos del chat</h3>
+
+              <div class="form-group">
+                <label>Mensaje de bienvenida</label>
+                <input type="text" id="wid-msg-bienvenida" placeholder="¡Hola! ¿En qué te ayudo?" oninput="actualizarPreview();">
+              </div>
+
+              <div class="form-group">
+                <label>Mensaje de despedida</label>
+                <input type="text" id="wid-msg-despedida" placeholder="Gracias por contactarnos.">
+              </div>
+
+              <div class="form-group">
+                <label>URL del aviso de privacidad</label>
+                <input type="text" id="wid-url-privacidad" placeholder="/privacidad">
+              </div>
+            </div>
+
+            <!-- POSICIÓN -->
+            <div class="card">
+              <h3 class="card-title">Posición del widget</h3>
+              <div class="form-group">
+                <label>¿Dónde quieres que aparezca la burbuja?</label>
+                <select id="wid-posicion" onchange="actualizarPreview();">
+                  <option value="derecha">Derecha</option>
+                  <option value="izquierda">Izquierda</option>
+                </select>
+              </div>
+            </div>
+
+            <!-- GUARDAR -->
+            <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:12px;">
+              <button class="btn btn-primario" onclick="guardarPersonalizacion()">
+                <i class="bi bi-check-lg"></i> Guardar cambios
+              </button>
+              <button class="btn btn-secundario" onclick="cargarPersonalizacion()">
+                <i class="bi bi-arrow-clockwise"></i> Recargar
+              </button>
+            </div>
+          </div>
+
+          <!-- COLUMNA DERECHA: VISTA PREVIA -->
+          <div class="wid-preview-sticky">
+            <div class="wid-preview-card">
+              <h3>Vista previa</h3>
+              <div class="wid-mock" id="wid-mock">
+                <div class="wid-mock-ventana">
+                  <div class="wid-mock-header" id="wid-mock-header">
+                    <img id="wid-mock-logo" src="" style="display:none;" alt="">
+                    <div class="sin-logo-mini" id="wid-mock-sin-logo"></div>
+                    <span id="wid-mock-nombre">Mi chatbot</span>
+                  </div>
+                  <div class="wid-mock-body">
+                    <div class="wid-mock-msg bot" id="wid-mock-msg-bot">¡Hola! ¿En qué te ayudo?</div>
+                    <div class="wid-mock-msg user" id="wid-mock-msg-user">Hola, tengo una duda</div>
+                  </div>
+                  <div class="wid-mock-input">
+                    <input type="text" placeholder="Escribe..." disabled>
+                    <button id="wid-mock-btn">➤</button>
+                  </div>
+                  <div class="wid-mock-footer">
+                    <a href="#" onclick="return false;" style="color:#7a8794;text-decoration:underline;">Aviso de privacidad</a>
+                    <span>✕</span>
+                  </div>
+                </div>
+                <div class="wid-mock-burbuja" id="wid-mock-burbuja">💬</div>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </section>
+
     <section class="seccion" id="seccion-cuenta">
       <h1 class="page-title">Mi Cuenta</h1>
       <p class="page-sub">Datos personales y de facturación.</p>
@@ -859,6 +1252,7 @@ const API_URL = "https://servix-9i0u.onrender.com";
 let cliente = null;
 let chatbots = [];
 let chatbotSeleccionado = null;
+let chatbotPersonalizar = null;
 
 /* Planes y sus datos */
 const PLANES = {
@@ -932,6 +1326,7 @@ function navegarA(seccion){
 
   if(seccion === 'reglas') llenarSelectChatbots('select-chatbot-reglas');
   if(seccion === 'instalar') llenarSelectChatbots('select-chatbot-instalar');
+  if(seccion === 'personalizar') llenarSelectChatbots('select-chatbot-personalizar');
   if(seccion === 'cuenta') cargarCuenta();
 }
 
@@ -955,11 +1350,8 @@ function mostrarInicioSegunEstado(){
     document.getElementById('inicio-activo').style.display = 'block';
     document.getElementById('dato-plan').textContent = (cliente.plan || '').toUpperCase() || 'Activo';
 
-    /* Si ya está activo pero NO es pro/business, mostramos también las tarjetas
-       para que pueda pedir upgrade */
     if(!planTieneIA(cliente.plan)){
       document.getElementById('inicio-prueba').style.display = 'block';
-      /* Quitamos el aviso amarillo de "prueba" porque ya no es prueba */
       const avisoAmarillo = document.querySelector('#inicio-prueba .card');
       if(avisoAmarillo){
         avisoAmarillo.style.display = 'none';
@@ -988,6 +1380,7 @@ async function cargarChatbots(){
     renderizarChatbots();
     llenarSelectChatbots('select-chatbot-reglas');
     llenarSelectChatbots('select-chatbot-instalar');
+    llenarSelectChatbots('select-chatbot-personalizar');
   }catch(err){
     console.error(err);
   }
@@ -1025,8 +1418,10 @@ function renderizarChatbots(){
 function llenarSelectChatbots(selectId){
   const select = document.getElementById(selectId);
   if(!select) return;
+  const valorPrevio = select.value;
   select.innerHTML = '<option value="">— Selecciona un chatbot —</option>' +
     chatbots.map(cb => `<option value="${cb.id}">${cb.nombre}</option>`).join('');
+  if(valorPrevio) select.value = valorPrevio;
 }
 
 function abrirModalChatbot(){
@@ -1035,7 +1430,6 @@ function abrirModalChatbot(){
   document.getElementById('chatbot-modo').value = 'reglas';
   document.getElementById('modal-chatbot-error').classList.remove('visible');
 
-  /* Ocultar/mostrar opciones IA según el plan */
   const optIA = document.getElementById('opt-ia');
   const optMixto = document.getElementById('opt-mixto');
   const aviso = document.getElementById('aviso-ia-bloqueada');
@@ -1050,7 +1444,6 @@ function abrirModalChatbot(){
     optIA.style.display = 'none';
     optMixto.style.display = 'none';
     aviso.style.display = 'block';
-    /* Dejamos solo la opción "Reglas" visible */
     grupoModo.style.display = '';
   }
 }
@@ -1294,6 +1687,296 @@ function cargarCuenta(){
 }
 
 /* =====================================================
+   PERSONALIZAR WIDGET
+   ===================================================== */
+
+async function cargarPersonalizacion(){
+  const chatbotId = document.getElementById('select-chatbot-personalizar').value;
+  const cont = document.getElementById('personalizar-container');
+  const exito = document.getElementById('personalizar-exito');
+  const error = document.getElementById('personalizar-error');
+
+  exito.classList.remove('visible');
+  error.classList.remove('visible');
+
+  if(!chatbotId){
+    cont.style.display = 'none';
+    chatbotPersonalizar = null;
+    return;
+  }
+
+  cont.style.display = 'block';
+
+  const token = localStorage.getItem('servix_token');
+  try{
+    const resp = await fetch(`${API_URL}/api/chatbots/${chatbotId}`, {
+      headers: { 'Authorization': `Bearer ${token}` }
+    });
+    const data = await resp.json();
+    if(!resp.ok || !data.chatbot){
+      error.textContent = 'No se pudo cargar el chatbot.';
+      error.classList.add('visible');
+      return;
+    }
+
+    chatbotPersonalizar = data.chatbot;
+    rellenarFormularioPersonalizar(chatbotPersonalizar);
+  }catch(e){
+    console.error(e);
+    error.textContent = 'Error de conexión.';
+    error.classList.add('visible');
+  }
+}
+
+function rellenarFormularioPersonalizar(cb){
+  document.getElementById('wid-color-burbuja').value = cb.color_burbuja || '#2e6fd9';
+  document.getElementById('wid-color-burbuja-txt').value = cb.color_burbuja || '#2e6fd9';
+
+  document.getElementById('wid-color-header').value = cb.color_header || '#2e6fd9';
+  document.getElementById('wid-color-header-txt').value = cb.color_header || '#2e6fd9';
+
+  document.getElementById('wid-color-texto-header').value = cb.color_texto_header || '#ffffff';
+  document.getElementById('wid-color-texto-header-txt').value = cb.color_texto_header || '#ffffff';
+
+  document.getElementById('wid-color-msg-bot').value = cb.color_msg_bot || '#ffffff';
+  document.getElementById('wid-color-msg-bot-txt').value = cb.color_msg_bot || '#ffffff';
+
+  document.getElementById('wid-color-msg-user').value = cb.color_msg_user || '#2e6fd9';
+  document.getElementById('wid-color-msg-user-txt').value = cb.color_msg_user || '#2e6fd9';
+
+  document.getElementById('wid-msg-bienvenida').value = cb.mensaje_bienvenida || '';
+  document.getElementById('wid-msg-despedida').value = cb.mensaje_despedida || '';
+  document.getElementById('wid-url-privacidad').value = cb.url_privacidad || '/privacidad';
+
+  document.getElementById('wid-posicion').value = cb.posicion || 'derecha';
+
+  // Logo
+  const img = document.getElementById('wid-logo-img');
+  const sin = document.getElementById('wid-logo-sin');
+  const btnEliminar = document.getElementById('wid-logo-eliminar');
+  const info = document.getElementById('wid-logo-info');
+
+  if(cb.logo_url){
+    img.src = cb.logo_url;
+    img.style.display = 'block';
+    sin.style.display = 'none';
+    btnEliminar.style.display = 'inline-flex';
+    info.textContent = 'Logo cargado.';
+  } else {
+    img.src = '';
+    img.style.display = 'none';
+    sin.style.display = 'flex';
+    btnEliminar.style.display = 'none';
+    info.textContent = 'Sin logo. Sube uno desde tu computadora.';
+  }
+
+  actualizarPreview();
+}
+
+function actualizarPreview(){
+  const colorBurbuja = document.getElementById('wid-color-burbuja').value;
+  const colorHeader = document.getElementById('wid-color-header').value;
+  const colorTextoHeader = document.getElementById('wid-color-texto-header').value;
+  const colorMsgBot = document.getElementById('wid-color-msg-bot').value;
+  const colorMsgUser = document.getElementById('wid-color-msg-user').value;
+  const msgBienvenida = document.getElementById('wid-msg-bienvenida').value || '¡Hola! ¿En qué te ayudo?';
+
+  const mockHeader = document.getElementById('wid-mock-header');
+  mockHeader.style.background = colorHeader;
+  mockHeader.style.color = colorTextoHeader;
+
+  const mockBurbuja = document.getElementById('wid-mock-burbuja');
+  mockBurbuja.style.background = colorBurbuja;
+
+  const msgBot = document.getElementById('wid-mock-msg-bot');
+  msgBot.style.background = colorMsgBot;
+  msgBot.style.color = '#1e2733';
+  msgBot.textContent = msgBienvenida;
+
+  const msgUser = document.getElementById('wid-mock-msg-user');
+  msgUser.style.background = colorMsgUser;
+
+  const btnEnviar = document.getElementById('wid-mock-btn');
+  btnEnviar.style.background = colorHeader;
+  btnEnviar.style.color = colorTextoHeader;
+
+  // Logo en preview
+  const imgLogo = document.getElementById('wid-logo-img');
+  const mockLogo = document.getElementById('wid-mock-logo');
+  const mockSinLogo = document.getElementById('wid-mock-sin-logo');
+
+  if(imgLogo.src && imgLogo.style.display !== 'none'){
+    mockLogo.src = imgLogo.src;
+    mockLogo.style.display = 'block';
+    mockSinLogo.style.display = 'none';
+  } else {
+    mockLogo.src = '';
+    mockLogo.style.display = 'none';
+    mockSinLogo.style.display = 'block';
+  }
+
+  // Posición burbuja
+  const posicion = document.getElementById('wid-posicion').value;
+  mockBurbuja.style.right = posicion === 'derecha' ? '20px' : 'auto';
+  mockBurbuja.style.left = posicion === 'izquierda' ? '20px' : 'auto';
+}
+
+// Subida automática de logo al seleccionar
+document.getElementById('wid-logo-input').addEventListener('change', async function(e){
+  const file = e.target.files[0];
+  if(!file || !chatbotPersonalizar) return;
+
+  const exito = document.getElementById('personalizar-exito');
+  const error = document.getElementById('personalizar-error');
+  exito.classList.remove('visible');
+  error.classList.remove('visible');
+
+  const token = localStorage.getItem('servix_token');
+  const formData = new FormData();
+  formData.append('file', file);
+
+  try{
+    const resp = await fetch(`${API_URL}/api/chatbots/${chatbotPersonalizar.id}/logo`, {
+      method: 'POST',
+      headers: { 'Authorization': `Bearer ${token}` },
+      body: formData
+    });
+
+    const data = await resp.json();
+
+    if(!resp.ok){
+      error.textContent = data.detail || 'No se pudo subir el logo.';
+      error.classList.add('visible');
+      return;
+    }
+
+    chatbotPersonalizar.logo_url = data.logo_url;
+    document.getElementById('wid-logo-img').src = data.logo_url;
+    document.getElementById('wid-logo-img').style.display = 'block';
+    document.getElementById('wid-logo-sin').style.display = 'none';
+    document.getElementById('wid-logo-eliminar').style.display = 'inline-flex';
+    document.getElementById('wid-logo-info').textContent = 'Logo cargado.';
+
+    // Refrescar también en lista de chatbots
+    const cb = chatbots.find(c => c.id == chatbotPersonalizar.id);
+    if(cb) cb.logo_url = data.logo_url;
+
+    actualizarPreview();
+
+    exito.textContent = '✅ Logo subido correctamente.';
+    exito.classList.add('visible');
+    setTimeout(()=> exito.classList.remove('visible'), 3000);
+
+  }catch(err){
+    console.error(err);
+    error.textContent = 'Error de conexión subiendo logo.';
+    error.classList.add('visible');
+  } finally {
+    e.target.value = '';
+  }
+});
+
+async function eliminarLogo(){
+  if(!chatbotPersonalizar) return;
+  if(!confirm('¿Eliminar el logo del chatbot?')) return;
+
+  const token = localStorage.getItem('servix_token');
+  const exito = document.getElementById('personalizar-exito');
+  const error = document.getElementById('personalizar-error');
+  exito.classList.remove('visible');
+  error.classList.remove('visible');
+
+  try{
+    const resp = await fetch(`${API_URL}/api/chatbots/${chatbotPersonalizar.id}/logo`, {
+      method: 'DELETE',
+      headers: { 'Authorization': `Bearer ${token}` }
+    });
+
+    if(!resp.ok){
+      const data = await resp.json().catch(()=>({}));
+      error.textContent = data.detail || 'No se pudo eliminar el logo.';
+      error.classList.add('visible');
+      return;
+    }
+
+    chatbotPersonalizar.logo_url = null;
+    document.getElementById('wid-logo-img').src = '';
+    document.getElementById('wid-logo-img').style.display = 'none';
+    document.getElementById('wid-logo-sin').style.display = 'flex';
+    document.getElementById('wid-logo-eliminar').style.display = 'none';
+    document.getElementById('wid-logo-info').textContent = 'Sin logo. Sube uno desde tu computadora.';
+
+    const cb = chatbots.find(c => c.id == chatbotPersonalizar.id);
+    if(cb) cb.logo_url = null;
+
+    actualizarPreview();
+
+    exito.textContent = '✅ Logo eliminado.';
+    exito.classList.add('visible');
+    setTimeout(()=> exito.classList.remove('visible'), 3000);
+
+  }catch(err){
+    console.error(err);
+    error.textContent = 'Error de conexión.';
+    error.classList.add('visible');
+  }
+}
+
+async function guardarPersonalizacion(){
+  if(!chatbotPersonalizar) return;
+
+  const exito = document.getElementById('personalizar-exito');
+  const error = document.getElementById('personalizar-error');
+  exito.classList.remove('visible');
+  error.classList.remove('visible');
+
+  const payload = {
+    color_burbuja: document.getElementById('wid-color-burbuja').value,
+    color_header: document.getElementById('wid-color-header').value,
+    color_texto_header: document.getElementById('wid-color-texto-header').value,
+    color_msg_bot: document.getElementById('wid-color-msg-bot').value,
+    color_msg_user: document.getElementById('wid-color-msg-user').value,
+    mensaje_bienvenida: document.getElementById('wid-msg-bienvenida').value.trim(),
+    mensaje_despedida: document.getElementById('wid-msg-despedida').value.trim(),
+    url_privacidad: document.getElementById('wid-url-privacidad').value.trim() || '/privacidad',
+    posicion: document.getElementById('wid-posicion').value
+  };
+
+  const token = localStorage.getItem('servix_token');
+  try{
+    const resp = await fetch(`${API_URL}/api/chatbots/${chatbotPersonalizar.id}`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      },
+      body: JSON.stringify(payload)
+    });
+
+    if(!resp.ok){
+      const data = await resp.json().catch(()=>({}));
+      error.textContent = data.detail || 'No se pudieron guardar los cambios.';
+      error.classList.add('visible');
+      return;
+    }
+
+    // Actualizar copia local
+    Object.assign(chatbotPersonalizar, payload);
+    const cb = chatbots.find(c => c.id == chatbotPersonalizar.id);
+    if(cb) Object.assign(cb, payload);
+
+    exito.textContent = '✅ Cambios guardados correctamente.';
+    exito.classList.add('visible');
+    setTimeout(()=> exito.classList.remove('visible'), 3500);
+
+  }catch(err){
+    console.error(err);
+    error.textContent = 'Error de conexión.';
+    error.classList.add('visible');
+  }
+}
+
+/* =====================================================
    CONTRATAR PLAN — MODAL CON DATOS SPEI
    ===================================================== */
 
@@ -1309,7 +1992,6 @@ async function contratarPlan(plan){
 
   document.getElementById('modal-pago').classList.add('open');
 
-  /* Leer datos de configuración pública */
   let cfg = { banco: '', clabe: '', beneficiario: '', email_soporte: '', mensaje_extra: '' };
   try{
     const resp = await fetch(`${API_URL}/api/configuracion-publica`);
@@ -1322,8 +2004,6 @@ async function contratarPlan(plan){
   }
 
   const tieneDatos = cfg.banco || cfg.clabe || cfg.beneficiario;
-
-  /* Concepto sugerido para la transferencia */
   const concepto = info.nombre.toUpperCase() + ' - ' + (cliente.email || '');
 
   let html = `
