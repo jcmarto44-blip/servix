@@ -321,6 +321,18 @@ table.tabla tbody tr:hover{background:var(--gris-bg);}
 }
 .mensaje-error.visible{display:block;}
 
+.mensaje-exito{
+  background:#e8f5ec;
+  border:1px solid #a7d5b4;
+  color:#1d6b34;
+  padding:10px 14px;
+  border-radius:6px;
+  font-size:13px;
+  margin-bottom:14px;
+  display:none;
+}
+.mensaje-exito.visible{display:block;}
+
 .aviso-vacio{
   color:var(--texto-secundario);
   line-height:1.7;
@@ -329,6 +341,41 @@ table.tabla tbody tr:hover{background:var(--gris-bg);}
   background:var(--gris-bg);
   padding:2px 6px;
   border-radius:4px;
+}
+
+/* Formulario de Datos de Contratación */
+.form-group{margin-bottom:16px;}
+.form-group label{
+  display:block;
+  font-size:13px;
+  font-weight:600;
+  margin-bottom:6px;
+  color:var(--texto-oscuro);
+}
+.form-group label .ico{
+  color:var(--gris-icono);
+  margin-right:6px;
+  font-size:14px;
+}
+.form-group input,
+.form-group textarea{
+  width:100%;
+  padding:10px 12px;
+  border:1.5px solid var(--gris-borde);
+  border-radius:8px;
+  font-size:14px;
+  font-family:'Inter',sans-serif;
+  color:var(--texto-oscuro);
+  background:#fff;
+}
+.form-group input:focus,
+.form-group textarea:focus{
+  outline:none;
+  border-color:var(--azul-boton);
+}
+.form-group textarea{
+  resize:vertical;
+  min-height:80px;
 }
 
 @media(max-width:900px){
@@ -377,6 +424,9 @@ table.tabla tbody tr:hover{background:var(--gris-bg);}
     </div>
     <div class="menu-item" data-seccion="facturas" onclick="navegarA('facturas')">
       <i class="bi bi-receipt"></i> Facturas
+    </div>
+    <div class="menu-item" data-seccion="contratacion" onclick="navegarA('contratacion')">
+      <i class="bi bi-credit-card"></i> Datos de Contratación
     </div>
     <div class="menu-item" data-seccion="reportes" onclick="navegarA('reportes')">
       <i class="bi bi-graph-up"></i> Reportes
@@ -429,6 +479,9 @@ table.tabla tbody tr:hover{background:var(--gris-bg);}
           <button class="btn btn-secundario" onclick="navegarA('facturas')">
             <i class="bi bi-receipt"></i> Ver facturas
           </button>
+          <button class="btn btn-secundario" onclick="navegarA('contratacion')">
+            <i class="bi bi-credit-card"></i> Datos de contratación
+          </button>
           <button class="btn btn-secundario" onclick="navegarA('reportes')">
             <i class="bi bi-graph-up"></i> Ver reportes
           </button>
@@ -465,6 +518,52 @@ table.tabla tbody tr:hover{background:var(--gris-bg);}
 
       <div class="card">
         <p style="color:var(--texto-secundario);">Aquí aparecerán las facturas de todos los clientes cuando se registren los pagos.</p>
+      </div>
+    </section>
+
+    <section class="seccion" id="seccion-contratacion">
+      <h1 class="page-title">Datos de Contratación</h1>
+      <p class="page-sub">Estos datos aparecen al cliente cuando quiere contratar un plan de pago.</p>
+
+      <div class="card">
+        <div class="mensaje-exito" id="contratacion-exito"></div>
+        <div class="mensaje-error" id="contratacion-error"></div>
+
+        <div class="grid-2">
+          <div class="form-group">
+            <label><i class="bi bi-bank ico"></i>Banco</label>
+            <input type="text" id="cfg-banco" placeholder="Ej: BBVA" maxlength="150">
+          </div>
+          <div class="form-group">
+            <label><i class="bi bi-hash ico"></i>CLABE</label>
+            <input type="text" id="cfg-clabe" placeholder="Ej: 012345678901234567" maxlength="50">
+          </div>
+        </div>
+
+        <div class="grid-2">
+          <div class="form-group">
+            <label><i class="bi bi-person ico"></i>Beneficiario</label>
+            <input type="text" id="cfg-beneficiario" placeholder="Nombre tal como aparece en el banco" maxlength="200">
+          </div>
+          <div class="form-group">
+            <label><i class="bi bi-envelope ico"></i>Email de soporte</label>
+            <input type="email" id="cfg-email" placeholder="Ej: soporte@servix.com" maxlength="200">
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label><i class="bi bi-chat-left-text ico"></i>Mensaje adicional (opcional)</label>
+          <textarea id="cfg-mensaje" placeholder="Ej: Envía tu comprobante y activamos tu plan en menos de 24 horas." maxlength="500"></textarea>
+        </div>
+
+        <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:8px;">
+          <button class="btn btn-primario" onclick="guardarContratacion()">
+            <i class="bi bi-check-lg"></i> Guardar cambios
+          </button>
+          <button class="btn btn-secundario" onclick="cargarContratacion()">
+            <i class="bi bi-arrow-clockwise"></i> Recargar
+          </button>
+        </div>
       </div>
     </section>
 
@@ -577,6 +676,7 @@ function navegarA(seccion){
 
   if(seccion === 'clientes') cargarClientes();
   if(seccion === 'reportes') cargarReportes();
+  if(seccion === 'contratacion') cargarContratacion();
 }
 
 async function cargarClientes(){
@@ -831,6 +931,87 @@ async function cambiarPlanCliente(id){
   }catch(err){
     console.error(err);
     alert('Error de conexión');
+  }
+}
+
+/* =====================================================
+   DATOS DE CONTRATACIÓN
+   ===================================================== */
+
+async function cargarContratacion(){
+  const token = localStorage.getItem('servix_token');
+  const exito = document.getElementById('contratacion-exito');
+  const error = document.getElementById('contratacion-error');
+
+  exito.classList.remove('visible');
+  error.classList.remove('visible');
+
+  try{
+    const resp = await fetch(`${API_URL}/api/admin/configuracion`, {
+      headers: { 'Authorization': `Bearer ${token}` }
+    });
+
+    if(!resp.ok){
+      error.textContent = 'No se pudieron cargar los datos (código ' + resp.status + ')';
+      error.classList.add('visible');
+      return;
+    }
+
+    const data = await resp.json();
+    const cfg = data.configuracion || {};
+
+    document.getElementById('cfg-banco').value = cfg.banco || '';
+    document.getElementById('cfg-clabe').value = cfg.clabe || '';
+    document.getElementById('cfg-beneficiario').value = cfg.beneficiario || '';
+    document.getElementById('cfg-email').value = cfg.email_soporte || '';
+    document.getElementById('cfg-mensaje').value = cfg.mensaje_extra || '';
+
+  }catch(err){
+    console.error(err);
+    error.textContent = 'Error de conexión con el servidor.';
+    error.classList.add('visible');
+  }
+}
+
+async function guardarContratacion(){
+  const token = localStorage.getItem('servix_token');
+  const exito = document.getElementById('contratacion-exito');
+  const error = document.getElementById('contratacion-error');
+
+  exito.classList.remove('visible');
+  error.classList.remove('visible');
+
+  const payload = {
+    banco: document.getElementById('cfg-banco').value.trim(),
+    clabe: document.getElementById('cfg-clabe').value.trim(),
+    beneficiario: document.getElementById('cfg-beneficiario').value.trim(),
+    email_soporte: document.getElementById('cfg-email').value.trim(),
+    mensaje_extra: document.getElementById('cfg-mensaje').value.trim()
+  };
+
+  try{
+    const resp = await fetch(`${API_URL}/api/admin/configuracion`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      },
+      body: JSON.stringify(payload)
+    });
+
+    if(resp.ok){
+      exito.textContent = '✅ Datos de contratación guardados correctamente.';
+      exito.classList.add('visible');
+      setTimeout(() => exito.classList.remove('visible'), 4000);
+    } else {
+      const data = await resp.json().catch(() => ({}));
+      error.textContent = data.detail || 'No se pudieron guardar los datos.';
+      error.classList.add('visible');
+    }
+  }catch(err){
+    console.error(err);
+    error.textContent = 'Error de conexión con el servidor.';
+    error.classList.add('visible');
   }
 }
 
