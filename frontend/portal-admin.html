@@ -378,6 +378,86 @@ table.tabla tbody tr:hover{background:var(--gris-bg);}
   min-height:80px;
 }
 
+/* ===== RESET PASSWORD ===== */
+.reset-section{
+  margin-top:16px;
+  padding-top:16px;
+  border-top:2px solid var(--gris-borde);
+}
+.reset-section .titulo{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  font-size:14px;
+  font-weight:600;
+  color:var(--texto-oscuro);
+  margin-bottom:12px;
+}
+.reset-section .titulo .ico{
+  color:var(--gris-icono);
+  font-size:16px;
+}
+.reset-radio{
+  display:flex;
+  align-items:flex-start;
+  gap:10px;
+  padding:10px 12px;
+  border:1.5px solid var(--gris-borde);
+  border-radius:8px;
+  cursor:pointer;
+  margin-bottom:8px;
+  transition:all .15s;
+}
+.reset-radio:hover{
+  background:var(--gris-bg);
+}
+.reset-radio.activo{
+  border-color:var(--azul-boton);
+  background:#f0f6ff;
+}
+.reset-radio input[type="radio"]{
+  margin-top:3px;
+  cursor:pointer;
+  accent-color:var(--azul-boton);
+}
+.reset-radio .texto{
+  flex:1;
+}
+.reset-radio .texto b{
+  display:block;
+  font-size:13.5px;
+  color:var(--texto-oscuro);
+  margin-bottom:2px;
+}
+.reset-radio .texto small{
+  display:block;
+  font-size:12px;
+  color:var(--texto-secundario);
+  line-height:1.4;
+}
+.reset-campo{
+  margin-top:10px;
+  display:none;
+}
+.reset-campo.visible{
+  display:block;
+}
+.reset-campo input{
+  width:100%;
+  padding:10px 12px;
+  border:1.5px solid var(--gris-borde);
+  border-radius:8px;
+  font-size:14px;
+  font-family:'Inter',sans-serif;
+}
+.reset-campo input:focus{
+  outline:none;
+  border-color:var(--azul-boton);
+}
+.reset-accion{
+  margin-top:12px;
+}
+
 @media(max-width:900px){
   .grid-4,.grid-3{grid-template-columns:1fr 1fr;}
 }
@@ -839,6 +919,7 @@ function verDetalleCliente(id){
     <div class="info-row"><span class="label">Fin de prueba</span><span class="valor">${fechaFinPrueba}</span></div>
     <div class="info-row"><span class="label">Próximo pago</span><span class="valor">${proximoPago}</span></div>
     <div class="info-row"><span class="label">Chatbots</span><span class="valor">${c.total_chatbots || 0}</span></div>
+
     <div class="info-row" style="flex-direction:column;align-items:stretch;gap:8px;padding-top:16px;border-top:2px solid var(--gris-borde);margin-top:6px;">
       <span class="label" style="margin-bottom:2px;">Cambiar plan (al confirmar el pago)</span>
       <div style="display:flex;gap:8px;">
@@ -853,9 +934,120 @@ function verDetalleCliente(id){
       </div>
       <small style="color:var(--texto-secundario);">Esto también activa la cuenta del cliente (la saca de "prueba"/"suspendido").</small>
     </div>
+
+    <div class="reset-section">
+      <div class="titulo">
+        <i class="bi bi-key ico"></i>
+        Resetear contraseña
+      </div>
+
+      <div class="reset-radio activo" id="radio-manual" onclick="seleccionarModoReset('manual')">
+        <input type="radio" name="modo-reset" value="manual" checked>
+        <div class="texto">
+          <b>Manual</b>
+          <small>Tú escribes la contraseña nueva que le darás al cliente.</small>
+        </div>
+      </div>
+
+      <div class="reset-campo visible" id="campo-manual">
+        <input type="text" id="nueva-password-manual" placeholder="Ej: servix123 (mínimo 6 caracteres)" maxlength="100">
+      </div>
+
+      <div class="reset-radio" id="radio-automatica" onclick="seleccionarModoReset('automatica')">
+        <input type="radio" name="modo-reset" value="automatica">
+        <div class="texto">
+          <b>Automática</b>
+          <small>El sistema genera una contraseña temporal (ej: servixA7B3C9).</small>
+        </div>
+      </div>
+
+      <div class="reset-accion">
+        <button class="btn btn-primario btn-chico" onclick="resetearPasswordCliente(${c.id})">
+          <i class="bi bi-key"></i> Resetear contraseña
+        </button>
+      </div>
+    </div>
   `;
 
   document.getElementById('modal-cliente').classList.add('open');
+}
+
+function seleccionarModoReset(modo){
+  const radioManual = document.getElementById('radio-manual');
+  const radioAuto = document.getElementById('radio-automatica');
+  const campoManual = document.getElementById('campo-manual');
+  const inputManual = document.getElementById('nueva-password-manual');
+
+  if(modo === 'manual'){
+    radioManual.classList.add('activo');
+    radioAuto.classList.remove('activo');
+    radioManual.querySelector('input').checked = true;
+    campoManual.classList.add('visible');
+    if(inputManual) inputManual.focus();
+  } else {
+    radioAuto.classList.add('activo');
+    radioManual.classList.remove('activo');
+    radioAuto.querySelector('input').checked = true;
+    campoManual.classList.remove('visible');
+  }
+}
+
+async function resetearPasswordCliente(id){
+  const modoManual = document.getElementById('radio-manual').classList.contains('activo');
+  const inputManual = document.getElementById('nueva-password-manual');
+
+  let payload = {};
+
+  if(modoManual){
+    const pass = (inputManual ? inputManual.value.trim() : '');
+    if(!pass || pass.length < 6){
+      alert('La contraseña debe tener al menos 6 caracteres.');
+      return;
+    }
+    payload.password = pass;
+  }
+  // Si es automática, no mandamos password → el backend la genera
+
+  const confirmacion = confirm(
+    modoManual
+      ? `¿Resetear la contraseña de ${clienteSeleccionado.nombre_completo}?\n\nNueva contraseña: ${payload.password}`
+      : `¿Generar contraseña automática para ${clienteSeleccionado.nombre_completo}?`
+  );
+  if(!confirmacion) return;
+
+  const token = localStorage.getItem('servix_token');
+  try{
+    const resp = await fetch(`${API_URL}/api/admin/clientes/${id}/reset-password`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      },
+      body: JSON.stringify(payload)
+    });
+
+    const data = await resp.json();
+
+    if(!resp.ok){
+      alert('Error: ' + (data.detail || 'No se pudo resetear la contraseña'));
+      return;
+    }
+
+    alert(
+      `✅ Contraseña reseteada correctamente.\n\n` +
+      `Cliente: ${clienteSeleccionado.nombre_completo}\n` +
+      `Email: ${data.email_cliente}\n` +
+      `Contraseña nueva: ${data.password_temporal}\n\n` +
+      `⚠️ Cópiala y mándasela al cliente. No se volverá a mostrar.`
+    );
+
+    // Limpiar el campo si era manual
+    if(inputManual) inputManual.value = '';
+
+  }catch(err){
+    console.error(err);
+    alert('Error de conexión');
+  }
 }
 
 function cerrarModalCliente(){
