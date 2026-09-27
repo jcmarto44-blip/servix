@@ -23,7 +23,7 @@ import requests
 # CONFIGURACIÓN INICIAL
 # =====================================================
 
-app = FastAPI(title="SERVIX API", version="1.0.4")
+app = FastAPI(title="SERVIX API", version="1.0.5")
 
 app.add_middleware(
     CORSMiddleware,
@@ -138,6 +138,12 @@ def generar_token() -> str:
 def generar_token_chatbot() -> str:
     return secrets.token_urlsafe(16)
 
+def generar_password_temporal() -> str:
+    """Genera una contraseña temporal tipo 'servixA7B3C9' (sin guión)."""
+    caracteres = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"  # Sin caracteres que se confundan (0, O, 1, I)
+    sufijo = "".join(secrets.choice(caracteres) for _ in range(6))
+    return f"servix{sufijo}"
+
 def validar_email(email: str) -> bool:
     patron = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
     return bool(re.match(patron, email))
@@ -171,7 +177,6 @@ def subir_a_supabase(nombre_archivo: str, contenido: bytes, content_type: str) -
             logging.error(f"Error subiendo a Supabase: {r.status_code} - {r.text}")
             return None
 
-        # URL pública
         url_publica = f"{SUPABASE_URL}/storage/v1/object/public/logos/{nombre_archivo}"
         return url_publica
     except Exception as e:
@@ -296,13 +301,18 @@ class ConfiguracionUpdate(BaseModel):
     email_soporte: Optional[str] = None
     mensaje_extra: Optional[str] = None
 
+class PasswordResetRequest(BaseModel):
+    """Body para resetear contraseña del cliente desde el admin.
+    Si 'password' se manda, se usa esa. Si no, el sistema genera una automáticamente."""
+    password: Optional[str] = None
+
 # =====================================================
 # RAÍZ Y HEALTH
 # =====================================================
 
 @app.get("/")
 def inicio():
-    return {"mensaje": "SERVIX API funcionando", "version": "1.0.4", "estado": "ok"}
+    return {"mensaje": "SERVIX API funcionando", "version": "1.0.5", "estado": "ok"}
 
 @app.get("/health")
 def health():
@@ -695,7 +705,6 @@ def actualizar_chatbot(chatbot_id: int, data: ChatbotUpdate, cliente = Depends(g
         if not cursor.fetchone():
             raise HTTPException(status_code=404, detail="Chatbot no encontrado")
 
-        # Campos que NO se limpian HTML
         campos_crudos = [
             'color_primario', 'color_texto', 'modo', 'posicion',
             'color_burbuja', 'color_header', 'color_texto_header',
@@ -766,26 +775,21 @@ async def subir_logo_chatbot(chatbot_id: int, file: UploadFile = File(...), clie
         if not cursor.fetchone():
             raise HTTPException(status_code=404, detail="Chatbot no encontrado")
 
-        # Validar tipo
         if file.content_type not in ('image/jpeg', 'image/png', 'image/webp', 'image/svg+xml'):
             raise HTTPException(status_code=400, detail="Formato no permitido. Usa JPG, PNG, WEBP o SVG.")
 
         contenido = await file.read()
 
-        # Validar tamaño (2 MB)
         if len(contenido) > 2 * 1024 * 1024:
             raise HTTPException(status_code=400, detail="El archivo supera los 2 MB.")
 
-        # Nombre único
         ext = file.filename.split('.')[-1].lower() if '.' in file.filename else 'png'
         nombre = f"chatbot_{chatbot_id}_{secrets.token_hex(6)}.{ext}"
 
-        # Subir a Supabase
         url = subir_a_supabase(nombre, contenido, file.content_type)
         if not url:
             raise HTTPException(status_code=500, detail="No se pudo subir el logo a Supabase.")
 
-        # Guardar en BD
         cursor.execute("UPDATE chatbots SET logo_url = %s WHERE id = %s", (url, chatbot_id))
         conn.commit()
 
@@ -1101,6 +1105,61 @@ def admin_cambiar_plan(cliente_id: int, data: PlanUpdate, cliente = Depends(get_
         if conn:
             conn.close()
 
+@app.put("/api/admin/clientes/{cliente_id}/reset-password")
+def admin_resetear_password(cliente_id: int, data: PasswordResetRequest, cliente = Depends(get_current_cliente)):
+    """Resetea la contraseña de un cliente.
+    - Si se manda 'password' en el body → usa esa contraseña (modo manual).
+    - Si NO se manda → genera una temporal automáticamente (modo automático)."""
+    if not verificar_admin(cliente):
+        raise HTTPException(status_code=403, detail="Acceso denegado")
+
+    conn = None
+    try:
+        conn = get_connection()
+        cursor = conn.cursor()
+
+        cursor.execute("SELECT email, nombre_completo FROM clientes WHERE id = %s", (cliente_id,))
+        row = cursor.fetchone()
+        if not row:
+            raise HTTPException(status_code=404, detail="Cliente no encontrado")
+
+        email_cliente = row[0]
+        nombre_cliente = row[1]
+
+        if email_cliente == 'admin@servix.com':
+            raise HTTPException(status_code=400, detail="No puedes resetear la contraseña del administrador")
+
+        # Determinar la contraseña
+        if data.password and len(data.password.strip()) >= 6:
+            nueva_password = data.password.strip()
+            modo = "manual"
+        elif data.password and len(data.password.strip()) < 6:
+            raise HTTPException(status_code=400, detail="La contraseña debe tener al menos 6 caracteres")
+        else:
+            nueva_password = generar_password_temporal()
+            modo = "automatico"
+
+        # Guardar hash en BD
+        nuevo_hash = hash_password(nueva_password)
+        cursor.execute("UPDATE clientes SET password_hash = %s WHERE id = %s", (nuevo_hash, cliente_id))
+        conn.commit()
+
+        return {
+            "success": True,
+            "mensaje": f"Contraseña reseteada para {nombre_cliente}",
+            "modo": modo,
+            "password_temporal": nueva_password,
+            "email_cliente": email_cliente
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        logging.error(f"Error reseteando contraseña: {str(e)}")
+        raise HTTPException(status_code=500, detail="Error al resetear la contraseña")
+    finally:
+        if conn:
+            conn.close()
+
 @app.delete("/api/admin/clientes/{cliente_id}")
 def admin_eliminar_cliente(cliente_id: int, cliente = Depends(get_current_cliente)):
     if not verificar_admin(cliente):
@@ -1356,7 +1415,6 @@ WIDGET_JS_TEMPLATE = r"""
     var urlPrivacidad = config.url_privacidad || "/privacidad";
     var msgDespedida = config.mensaje_despedida || "";
 
-    // ---- Burbuja flotante ----
     var bubbleContent = '<svg width="26" height="26" viewBox="0 0 24 24" fill="#ffffff">' +
       '<path d="M12 2C6.48 2 2 6.03 2 11c0 2.4 1.05 4.57 2.77 6.15L4 22l5.05-1.35C10 20.86 11 21 12 21c5.52 0 10-4.03 10-9s-4.48-10-10-10z"/></svg>';
 
@@ -1371,7 +1429,6 @@ WIDGET_JS_TEMPLATE = r"""
     bubble.onmouseenter = function () { bubble.style.transform = "scale(1.08)"; };
     bubble.onmouseleave = function () { bubble.style.transform = "scale(1)"; };
 
-    // ---- Ventana del chat ----
     var win = el("div",
       "position:fixed;bottom:92px;" + side + ":20px;width:340px;max-width:92vw;" +
       "height:460px;max-height:70vh;background:#fff;border-radius:14px;" +
@@ -1380,7 +1437,6 @@ WIDGET_JS_TEMPLATE = r"""
     );
     win.id = "servix-window";
 
-    // Header
     var headerInner = "";
     if (logo) {
       headerInner += '<img src="' + logo + '" style="width:36px;height:36px;object-fit:contain;background:#fff;border-radius:8px;padding:2px;margin-right:10px;flex-shrink:0;">';
@@ -1393,11 +1449,9 @@ WIDGET_JS_TEMPLATE = r"""
       headerInner
     );
 
-    // Body
     var body = el("div", "flex:1;overflow-y:auto;padding:12px;background:#f7f8fa;display:flex;flex-direction:column;");
     body.id = "servix-body";
 
-    // Input
     var inputWrap = el("div", "display:flex;border-top:1px solid #e5e7eb;padding:8px;gap:6px;background:#fff;");
     var input = document.createElement("input");
     input.type = "text";
@@ -1412,7 +1466,6 @@ WIDGET_JS_TEMPLATE = r"""
     inputWrap.appendChild(input);
     inputWrap.appendChild(sendBtn);
 
-    // Footer (aviso de privacidad)
     var footer = el("div",
       "display:flex;align-items:center;justify-content:space-between;padding:6px 12px;background:#fff;border-top:1px solid #e5e7eb;font-size:11px;color:#7a8794;",
       '<a href="' + urlPrivacidad + '" target="_blank" style="color:#7a8794;text-decoration:underline;">Aviso de privacidad</a>' +
@@ -1430,14 +1483,12 @@ WIDGET_JS_TEMPLATE = r"""
 
     addMessage(config.mensaje_bienvenida || "¡Hola! ¿En qué te ayudo?", "bot");
 
-    // Abrir/cerrar
     bubble.onclick = function () {
       isOpen = !isOpen;
       win.style.display = isOpen ? "flex" : "none";
       if (isOpen) input.focus();
     };
 
-    // Cerrar aviso de privacidad
     var avisoX = document.getElementById("servix-aviso-x");
     if (avisoX) {
       avisoX.onclick = function () {
@@ -1446,7 +1497,6 @@ WIDGET_JS_TEMPLATE = r"""
       };
     }
 
-    // Cerrar chat con confirmación
     var closeBtn = document.getElementById("servix-close");
     if (closeBtn) {
       closeBtn.onclick = function (e) {
