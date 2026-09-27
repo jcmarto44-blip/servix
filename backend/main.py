@@ -23,7 +23,7 @@ import requests
 # CONFIGURACIÓN INICIAL
 # =====================================================
 
-app = FastAPI(title="SERVIX API", version="1.0.5")
+app = FastAPI(title="SERVIX API", version="1.1.0")
 
 app.add_middleware(
     CORSMiddleware,
@@ -57,13 +57,13 @@ def get_connection():
 # =====================================================
 
 def inicializar_base_datos():
-    """Crea tabla configuracion y agrega columnas nuevas a chatbots si no existen."""
+    """Crea tablas y agrega columnas nuevas si no existen."""
     conn = None
     try:
         conn = get_connection()
         cursor = conn.cursor()
 
-        # Tabla configuracion (ya existía)
+        # Tabla configuracion
         cursor.execute("""
             CREATE TABLE IF NOT EXISTS configuracion (
                 id SERIAL PRIMARY KEY,
@@ -81,6 +81,30 @@ def inicializar_base_datos():
                 INSERT INTO configuracion (id, banco, clabe, beneficiario, email_soporte, mensaje_extra)
                 VALUES (1, '', '', '', '', '')
             """)
+
+        # Tabla solicitudes_reset
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS solicitudes_reset (
+                id SERIAL PRIMARY KEY,
+                nombre_contacto VARCHAR(200),
+                telefono_contacto VARCHAR(50),
+                cliente_id INT,
+                atendida BOOLEAN DEFAULT FALSE,
+                fecha_solicitud TIMESTAMP DEFAULT NOW(),
+                fecha_atendida TIMESTAMP
+            )
+        """)
+
+        # Tabla bitacora
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS bitacora (
+                id SERIAL PRIMARY KEY,
+                cliente_id INT,
+                accion VARCHAR(100),
+                detalle TEXT,
+                fecha TIMESTAMP DEFAULT NOW()
+            )
+        """)
 
         # Nuevas columnas en chatbots
         columnas = [
@@ -140,7 +164,7 @@ def generar_token_chatbot() -> str:
 
 def generar_password_temporal() -> str:
     """Genera una contraseña temporal tipo 'servixA7B3C9' (sin guión)."""
-    caracteres = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"  # Sin caracteres que se confundan (0, O, 1, I)
+    caracteres = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"
     sufijo = "".join(secrets.choice(caracteres) for _ in range(6))
     return f"servix{sufijo}"
 
@@ -159,8 +183,17 @@ def verificar_admin(cliente: dict) -> bool:
 def plan_permite_ia(plan: Optional[str]) -> bool:
     return plan in ('pro', 'business')
 
+def registrar_bitacora(cursor, cliente_id: int, accion: str, detalle: str = ""):
+    """Registra un evento en la bitácora."""
+    try:
+        cursor.execute("""
+            INSERT INTO bitacora (cliente_id, accion, detalle)
+            VALUES (%s, %s, %s)
+        """, (cliente_id, accion, detalle))
+    except Exception as e:
+        logging.warning(f"No se pudo registrar en bitácora: {e}")
+
 def subir_a_supabase(nombre_archivo: str, contenido: bytes, content_type: str) -> Optional[str]:
-    """Sube un archivo al bucket 'logos' de Supabase Storage y devuelve la URL pública."""
     if not SUPABASE_URL or not SUPABASE_SERVICE_KEY:
         logging.error("Supabase no configurado (URL o SERVICE_KEY faltantes)")
         return None
@@ -184,7 +217,6 @@ def subir_a_supabase(nombre_archivo: str, contenido: bytes, content_type: str) -
         return None
 
 def eliminar_de_supabase(nombre_archivo: str) -> bool:
-    """Elimina un archivo del bucket 'logos' de Supabase Storage."""
     if not SUPABASE_URL or not SUPABASE_SERVICE_KEY:
         return False
     try:
@@ -302,9 +334,11 @@ class ConfiguracionUpdate(BaseModel):
     mensaje_extra: Optional[str] = None
 
 class PasswordResetRequest(BaseModel):
-    """Body para resetear contraseña del cliente desde el admin.
-    Si 'password' se manda, se usa esa. Si no, el sistema genera una automáticamente."""
     password: Optional[str] = None
+
+class SolicitudResetRequest(BaseModel):
+    nombre_contacto: str
+    telefono_contacto: str
 
 # =====================================================
 # RAÍZ Y HEALTH
@@ -312,7 +346,7 @@ class PasswordResetRequest(BaseModel):
 
 @app.get("/")
 def inicio():
-    return {"mensaje": "SERVIX API funcionando", "version": "1.0.5", "estado": "ok"}
+    return {"mensaje": "SERVIX API funcionando", "version": "1.1.0", "estado": "ok"}
 
 @app.get("/health")
 def health():
@@ -427,6 +461,11 @@ def login(data: LoginRequest):
             SET token_sesion = %s, token_expiracion = %s
             WHERE id = %s
         """, (token, token_expiracion, cliente['id']))
+
+        # Bitácora
+        if cliente['email'] != 'admin@servix.com':
+            registrar_bitacora(cursor, cliente['id'], "login", "Inició sesión")
+
         conn.commit()
 
         return {
@@ -463,6 +502,11 @@ def logout(cliente = Depends(get_current_cliente)):
     try:
         conn = get_connection()
         cursor = conn.cursor()
+
+        # Bitácora
+        if cliente['email'] != 'admin@servix.com':
+            registrar_bitacora(cursor, cliente['id'], "logout", "Cerró sesión")
+
         cursor.execute("""
             UPDATE clientes
             SET token_sesion = NULL, token_expiracion = NULL
@@ -481,6 +525,48 @@ def logout(cliente = Depends(get_current_cliente)):
 @app.get("/api/me")
 def obtener_me(cliente = Depends(get_current_cliente)):
     return {"success": True, "cliente": cliente}
+
+# =====================================================
+# SOLICITUD DE RESET (PÚBLICO - CLIENTE DESDE LANDING)
+# =====================================================
+
+@app.post("/api/solicitar-reset")
+def solicitar_reset(data: SolicitudResetRequest):
+    """Endpoint público: el cliente (sin login) pide reset de contraseña.
+    Guarda nombre + teléfono para que el admin se contacte."""
+    if not data.nombre_contacto or len(data.nombre_contacto.strip()) < 2:
+        raise HTTPException(status_code=400, detail="Nombre de contacto inválido")
+    if not data.telefono_contacto or len(data.telefono_contacto.strip()) < 6:
+        raise HTTPException(status_code=400, detail="Teléfono de contacto inválido")
+
+    conn = None
+    try:
+        conn = get_connection()
+        cursor = conn.cursor()
+        cursor.execute("""
+            INSERT INTO solicitudes_reset (nombre_contacto, telefono_contacto)
+            VALUES (%s, %s)
+            RETURNING id
+        """, (
+            limpiar_html(data.nombre_contacto),
+            limpiar_html(data.telefono_contacto)
+        ))
+        nueva_id = cursor.fetchone()[0]
+        conn.commit()
+
+        return {
+            "success": True,
+            "mensaje": "Solicitud enviada. El administrador te contactará pronto.",
+            "solicitud_id": nueva_id
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        logging.error(f"Error creando solicitud reset: {str(e)}")
+        raise HTTPException(status_code=500, detail="Error al crear la solicitud")
+    finally:
+        if conn:
+            conn.close()
 
 # =====================================================
 # CONFIGURACIÓN (DATOS DE CONTRATACIÓN)
@@ -644,6 +730,10 @@ def crear_chatbot(data: ChatbotCreate, cliente = Depends(get_current_cliente)):
         ))
 
         nuevo = cursor.fetchone()
+
+        # Bitácora
+        registrar_bitacora(cursor, cliente['id'], "crear_chatbot", f"Creó chatbot '{nuevo[1]}'")
+
         conn.commit()
 
         return {
@@ -732,6 +822,10 @@ def actualizar_chatbot(chatbot_id: int, data: ChatbotUpdate, cliente = Depends(g
         valores.append(cliente['id'])
 
         cursor.execute(f"UPDATE chatbots SET {', '.join(campos)} WHERE id = %s AND cliente_id = %s", valores)
+
+        # Bitácora
+        registrar_bitacora(cursor, cliente['id'], "editar_chatbot", f"Editó chatbot id={chatbot_id}")
+
         conn.commit()
 
         return {"success": True, "mensaje": "Chatbot actualizado"}
@@ -753,6 +847,10 @@ def eliminar_chatbot(chatbot_id: int, cliente = Depends(get_current_cliente)):
         cursor.execute("DELETE FROM chatbots WHERE id = %s AND cliente_id = %s", (chatbot_id, cliente['id']))
         if cursor.rowcount == 0:
             raise HTTPException(status_code=404, detail="Chatbot no encontrado")
+
+        # Bitácora
+        registrar_bitacora(cursor, cliente['id'], "eliminar_chatbot", f"Eliminó chatbot id={chatbot_id}")
+
         conn.commit()
         return {"success": True, "mensaje": "Chatbot eliminado"}
     finally:
@@ -765,7 +863,6 @@ def eliminar_chatbot(chatbot_id: int, cliente = Depends(get_current_cliente)):
 
 @app.post("/api/chatbots/{chatbot_id}/logo")
 async def subir_logo_chatbot(chatbot_id: int, file: UploadFile = File(...), cliente = Depends(get_current_cliente)):
-    """Sube el logo del chatbot a Supabase Storage (bucket 'logos')."""
     conn = None
     try:
         conn = get_connection()
@@ -791,6 +888,10 @@ async def subir_logo_chatbot(chatbot_id: int, file: UploadFile = File(...), clie
             raise HTTPException(status_code=500, detail="No se pudo subir el logo a Supabase.")
 
         cursor.execute("UPDATE chatbots SET logo_url = %s WHERE id = %s", (url, chatbot_id))
+
+        # Bitácora
+        registrar_bitacora(cursor, cliente['id'], "subir_logo", f"Subió logo a chatbot id={chatbot_id}")
+
         conn.commit()
 
         return {"success": True, "mensaje": "Logo subido correctamente", "logo_url": url}
@@ -805,7 +906,6 @@ async def subir_logo_chatbot(chatbot_id: int, file: UploadFile = File(...), clie
 
 @app.delete("/api/chatbots/{chatbot_id}/logo")
 def eliminar_logo_chatbot(chatbot_id: int, cliente = Depends(get_current_cliente)):
-    """Elimina el logo del chatbot."""
     conn = None
     try:
         conn = get_connection()
@@ -821,6 +921,10 @@ def eliminar_logo_chatbot(chatbot_id: int, cliente = Depends(get_current_cliente
             eliminar_de_supabase(nombre)
 
         cursor.execute("UPDATE chatbots SET logo_url = NULL WHERE id = %s", (chatbot_id,))
+
+        # Bitácora
+        registrar_bitacora(cursor, cliente['id'], "eliminar_logo", f"Eliminó logo de chatbot id={chatbot_id}")
+
         conn.commit()
 
         return {"success": True, "mensaje": "Logo eliminado"}
@@ -904,6 +1008,10 @@ def crear_regla(data: ReglaCreate, cliente = Depends(get_current_cliente)):
         ))
 
         nueva_id = cursor.fetchone()[0]
+
+        # Bitácora
+        registrar_bitacora(cursor, cliente['id'], "crear_regla", f"Creó regla id={nueva_id}")
+
         conn.commit()
 
         return {"success": True, "mensaje": "Regla creada", "regla_id": nueva_id}
@@ -945,6 +1053,10 @@ def actualizar_regla(regla_id: int, data: ReglaUpdate, cliente = Depends(get_cur
 
         valores.append(regla_id)
         cursor.execute(f"UPDATE reglas SET {', '.join(campos)} WHERE id = %s", valores)
+
+        # Bitácora
+        registrar_bitacora(cursor, cliente['id'], "editar_regla", f"Editó regla id={regla_id}")
+
         conn.commit()
 
         return {"success": True, "mensaje": "Regla actualizada"}
@@ -965,6 +1077,10 @@ def eliminar_regla(regla_id: int, cliente = Depends(get_current_cliente)):
         """, (regla_id, cliente['id']))
         if cursor.rowcount == 0:
             raise HTTPException(status_code=404, detail="Regla no encontrada")
+
+        # Bitácora
+        registrar_bitacora(cursor, cliente['id'], "eliminar_regla", f"Eliminó regla id={regla_id}")
+
         conn.commit()
         return {"success": True, "mensaje": "Regla eliminada"}
     finally:
@@ -1107,9 +1223,6 @@ def admin_cambiar_plan(cliente_id: int, data: PlanUpdate, cliente = Depends(get_
 
 @app.put("/api/admin/clientes/{cliente_id}/reset-password")
 def admin_resetear_password(cliente_id: int, data: PasswordResetRequest, cliente = Depends(get_current_cliente)):
-    """Resetea la contraseña de un cliente.
-    - Si se manda 'password' en el body → usa esa contraseña (modo manual).
-    - Si NO se manda → genera una temporal automáticamente (modo automático)."""
     if not verificar_admin(cliente):
         raise HTTPException(status_code=403, detail="Acceso denegado")
 
@@ -1129,7 +1242,6 @@ def admin_resetear_password(cliente_id: int, data: PasswordResetRequest, cliente
         if email_cliente == 'admin@servix.com':
             raise HTTPException(status_code=400, detail="No puedes resetear la contraseña del administrador")
 
-        # Determinar la contraseña
         if data.password and len(data.password.strip()) >= 6:
             nueva_password = data.password.strip()
             modo = "manual"
@@ -1139,9 +1251,12 @@ def admin_resetear_password(cliente_id: int, data: PasswordResetRequest, cliente
             nueva_password = generar_password_temporal()
             modo = "automatico"
 
-        # Guardar hash en BD
         nuevo_hash = hash_password(nueva_password)
         cursor.execute("UPDATE clientes SET password_hash = %s WHERE id = %s", (nuevo_hash, cliente_id))
+
+        # Bitácora
+        registrar_bitacora(cursor, cliente_id, "reset_password", f"Admin reseteó contraseña (modo {modo})")
+
         conn.commit()
 
         return {
@@ -1181,6 +1296,123 @@ def admin_eliminar_cliente(cliente_id: int, cliente = Depends(get_current_client
         conn.commit()
 
         return {"success": True, "mensaje": "Cliente eliminado correctamente"}
+    finally:
+        if conn:
+            conn.close()
+
+# =====================================================
+# ADMIN - SOLICITUDES DE RESET
+# =====================================================
+
+@app.get("/api/admin/solicitudes-reset")
+def admin_listar_solicitudes_reset(cliente = Depends(get_current_cliente)):
+    if not verificar_admin(cliente):
+        raise HTTPException(status_code=403, detail="Acceso denegado")
+
+    conn = None
+    try:
+        conn = get_connection()
+        cursor = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+        cursor.execute("""
+            SELECT id, nombre_contacto, telefono_contacto, cliente_id,
+                   atendida, fecha_solicitud, fecha_atendida
+            FROM solicitudes_reset
+            ORDER BY atendida ASC, fecha_solicitud DESC
+        """)
+        solicitudes = cursor.fetchall()
+
+        for s in solicitudes:
+            if s['fecha_solicitud']:
+                s['fecha_solicitud'] = s['fecha_solicitud'].isoformat()
+            if s['fecha_atendida']:
+                s['fecha_atendida'] = s['fecha_atendida'].isoformat()
+
+        return {"success": True, "solicitudes": [dict(s) for s in solicitudes]}
+    finally:
+        if conn:
+            conn.close()
+
+@app.put("/api/admin/solicitudes-reset/{solicitud_id}/atender")
+def admin_atender_solicitud_reset(solicitud_id: int, cliente = Depends(get_current_cliente)):
+    if not verificar_admin(cliente):
+        raise HTTPException(status_code=403, detail="Acceso denegado")
+
+    conn = None
+    try:
+        conn = get_connection()
+        cursor = conn.cursor()
+
+        cursor.execute("SELECT id FROM solicitudes_reset WHERE id = %s", (solicitud_id,))
+        if not cursor.fetchone():
+            raise HTTPException(status_code=404, detail="Solicitud no encontrada")
+
+        cursor.execute("""
+            UPDATE solicitudes_reset
+            SET atendida = TRUE, fecha_atendida = NOW()
+            WHERE id = %s
+        """, (solicitud_id,))
+        conn.commit()
+
+        return {"success": True, "mensaje": "Solicitud marcada como atendida"}
+    finally:
+        if conn:
+            conn.close()
+
+# =====================================================
+# ADMIN - BITÁCORA
+# =====================================================
+
+@app.get("/api/admin/bitacora")
+def admin_listar_bitacora(cliente = Depends(get_current_cliente), limit: int = 500):
+    if not verificar_admin(cliente):
+        raise HTTPException(status_code=403, detail="Acceso denegado")
+
+    conn = None
+    try:
+        conn = get_connection()
+        cursor = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+        cursor.execute("""
+            SELECT 
+                b.id, b.cliente_id, b.accion, b.detalle, b.fecha,
+                c.nombre_completo, c.email, c.negocio
+            FROM bitacora b
+            LEFT JOIN clientes c ON c.id = b.cliente_id
+            ORDER BY b.fecha DESC
+            LIMIT %s
+        """, (limit,))
+        eventos = cursor.fetchall()
+
+        for e in eventos:
+            if e['fecha']:
+                e['fecha'] = e['fecha'].isoformat()
+
+        return {"success": True, "bitacora": [dict(e) for e in eventos]}
+    finally:
+        if conn:
+            conn.close()
+
+@app.get("/api/admin/bitacora/{cliente_id}")
+def admin_ver_bitacora_cliente(cliente_id: int, cliente = Depends(get_current_cliente)):
+    if not verificar_admin(cliente):
+        raise HTTPException(status_code=403, detail="Acceso denegado")
+
+    conn = None
+    try:
+        conn = get_connection()
+        cursor = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+        cursor.execute("""
+            SELECT id, cliente_id, accion, detalle, fecha
+            FROM bitacora
+            WHERE cliente_id = %s
+            ORDER BY fecha DESC
+        """, (cliente_id,))
+        eventos = cursor.fetchall()
+
+        for e in eventos:
+            if e['fecha']:
+                e['fecha'] = e['fecha'].isoformat()
+
+        return {"success": True, "bitacora": [dict(e) for e in eventos]}
     finally:
         if conn:
             conn.close()
