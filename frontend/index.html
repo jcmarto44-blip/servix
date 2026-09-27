@@ -442,6 +442,63 @@ h1,h2,h3{font-family:'Poppins',sans-serif;font-weight:600;}
 }
 .mensaje-error.visible{display:block;}
 
+.mensaje-exito{
+  background:#e8f5ec;
+  border:1px solid #a7d5b4;
+  color:#1d6b34;
+  border-radius:6px;
+  padding:9px 12px;
+  font-size:13px;
+  margin-bottom:14px;
+  display:none;
+}
+.mensaje-exito.visible{display:block;}
+
+/* ============ MODAL RESET PASSWORD ============ */
+.reset-botones{
+  display:flex;
+  flex-direction:column;
+  gap:10px;
+  margin-top:12px;
+}
+.btn-reset{
+  width:100%;
+  padding:14px;
+  border-radius:8px;
+  font-size:14px;
+  font-weight:600;
+  font-family:'Poppins',sans-serif;
+  border:1.5px solid var(--gris-borde);
+  background:#fff;
+  color:var(--texto-oscuro);
+  cursor:pointer;
+  transition:all .2s;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap:8px;
+}
+.btn-reset:hover:not(:disabled){
+  background:var(--gris-bg);
+  border-color:var(--azul-boton);
+  color:var(--azul-boton);
+}
+.btn-reset.activo{
+  background:var(--azul-boton);
+  color:#fff;
+  border-color:var(--azul-boton);
+}
+.btn-reset.activo:hover{
+  background:#1e5bbf;
+  color:#fff;
+}
+.btn-reset:disabled{
+  opacity:.45;
+  cursor:not-allowed;
+  background:var(--gris-bg);
+  color:var(--texto-secundario);
+}
+
 /* ============ MODAL SERVIX (informativo) ============ */
 .servix-modal-box{
   background:#ffffff;
@@ -794,7 +851,7 @@ h1,h2,h3{font-family:'Poppins',sans-serif;font-weight:600;}
           <input type="password" id="login-password" placeholder="Tu contraseña" required>
         </div>
         <button type="submit" class="btn-modal-primario" id="btn-login">ENTRAR</button>
-        <a class="modal-link" href="/recuperar">¿Olvidaste tu contraseña?</a>
+        <a class="modal-link" onclick="abrirModalReset()">¿Olvidaste tu contraseña?</a>
       </form>
 
       <!-- Form Registro -->
@@ -821,6 +878,75 @@ h1,h2,h3{font-family:'Poppins',sans-serif;font-weight:600;}
           y las <a href="/privacidad">Políticas de Privacidad</a>.
         </div>
       </form>
+    </div>
+  </div>
+</div>
+
+<!-- ================= MODAL RESET 1 (elegir método) ================= -->
+<div class="modal-overlay" id="modalReset1" onclick="if(event.target===this)cerrarModalReset()">
+  <div class="modal-box">
+    <button class="cerrar-modal" onclick="cerrarModalReset()">✕</button>
+
+    <div class="modal-head">
+      <div class="logo-modal">
+        <div class="simbolo-modal"><img src="/logo.jpg" alt="SERVIX"></div>
+        <div class="texto-modal">SERVIX</div>
+      </div>
+    </div>
+
+    <div class="modal-body">
+      <h3 style="text-align:center;font-size:17px;margin-bottom:6px;">¿Olvidaste tu contraseña?</h3>
+      <p style="text-align:center;color:var(--texto-secundario);font-size:13.5px;margin-bottom:16px;">
+        Elige cómo quieres recuperar tu acceso
+      </p>
+
+      <div class="reset-botones">
+        <button class="btn-reset activo" onclick="abrirModalReset2()">
+          Reset por Admin
+        </button>
+
+        <button class="btn-reset" disabled>
+          Reset por Email
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ================= MODAL RESET 2 (nombre + teléfono) ================= -->
+<div class="modal-overlay" id="modalReset2" onclick="if(event.target===this)cerrarModalReset2()">
+  <div class="modal-box">
+    <button class="cerrar-modal" onclick="cerrarModalReset2()">✕</button>
+
+    <div class="modal-head">
+      <div class="logo-modal">
+        <div class="simbolo-modal"><img src="/logo.jpg" alt="SERVIX"></div>
+        <div class="texto-modal">SERVIX</div>
+      </div>
+    </div>
+
+    <div class="modal-body">
+      <h3 style="text-align:center;font-size:17px;margin-bottom:6px;">Solicitud de recuperación</h3>
+      <p style="text-align:center;color:var(--texto-secundario);font-size:13.5px;margin-bottom:16px;">
+        Deja tus datos de contacto para que el administrador te ayude
+      </p>
+
+      <div class="mensaje-error" id="resetError"></div>
+      <div class="mensaje-exito" id="resetExito"></div>
+
+      <div class="form-group">
+        <label>Nombre de contacto</label>
+        <input type="text" id="reset-nombre" placeholder="Ej: Juan Pérez" maxlength="200">
+      </div>
+
+      <div class="form-group">
+        <label>Teléfono / WhatsApp</label>
+        <input type="text" id="reset-telefono" placeholder="Ej: 5551234567" maxlength="50">
+      </div>
+
+      <button class="btn-modal-primario" id="btn-reset-enviar" onclick="enviarSolicitudReset()">
+        ENVIAR SOLICITUD
+      </button>
     </div>
   </div>
 </div>
@@ -1014,6 +1140,92 @@ function ocultarError(){
 }
 
 // =====================================================
+// MODAL RESET PASSWORD
+// =====================================================
+
+function abrirModalReset(){
+  cerrarModal();
+  document.getElementById('modalReset1').classList.add('open');
+  document.getElementById('resetError').classList.remove('visible');
+  document.getElementById('resetExito').classList.remove('visible');
+}
+function cerrarModalReset(){
+  document.getElementById('modalReset1').classList.remove('open');
+}
+function abrirModalReset2(){
+  document.getElementById('modalReset1').classList.remove('open');
+  document.getElementById('modalReset2').classList.add('open');
+  document.getElementById('reset-nombre').value = '';
+  document.getElementById('reset-telefono').value = '';
+  document.getElementById('resetError').classList.remove('visible');
+  document.getElementById('resetExito').classList.remove('visible');
+  setTimeout(()=> document.getElementById('reset-nombre').focus(), 100);
+}
+function cerrarModalReset2(){
+  document.getElementById('modalReset2').classList.remove('open');
+}
+
+async function enviarSolicitudReset(){
+  const nombre = document.getElementById('reset-nombre').value.trim();
+  const telefono = document.getElementById('reset-telefono').value.trim();
+  const err = document.getElementById('resetError');
+  const exito = document.getElementById('resetExito');
+  const btn = document.getElementById('btn-reset-enviar');
+
+  err.classList.remove('visible');
+  exito.classList.remove('visible');
+
+  if(!nombre || nombre.length < 2){
+    err.textContent = 'Por favor, escribe tu nombre de contacto.';
+    err.classList.add('visible');
+    return;
+  }
+  if(!telefono || telefono.length < 6){
+    err.textContent = 'Por favor, escribe un teléfono válido.';
+    err.classList.add('visible');
+    return;
+  }
+
+  btn.disabled = true;
+  btn.textContent = 'Enviando...';
+
+  try{
+    const resp = await fetch(`${API_URL}/api/solicitar-reset`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        nombre_contacto: nombre,
+        telefono_contacto: telefono
+      })
+    });
+
+    const data = await resp.json();
+
+    if(!resp.ok){
+      err.textContent = data.detail || 'No se pudo enviar la solicitud.';
+      err.classList.add('visible');
+      btn.disabled = false;
+      btn.textContent = 'ENVIAR SOLICITUD';
+      return;
+    }
+
+    exito.textContent = '✅ Solicitud enviada. El administrador te contactará pronto.';
+    exito.classList.add('visible');
+
+    setTimeout(()=>{
+      cerrarModalReset2();
+    }, 2500);
+
+  }catch(e){
+    console.error(e);
+    err.textContent = 'Error de conexión. Intenta de nuevo.';
+    err.classList.add('visible');
+    btn.disabled = false;
+    btn.textContent = 'ENVIAR SOLICITUD';
+  }
+}
+
+// =====================================================
 // MODAL SERVIX
 // =====================================================
 
@@ -1038,10 +1250,8 @@ function toggleFAQ(el){
   const item = el.parentElement;
   const abierto = item.classList.contains('open');
 
-  /* Cerrar todos */
   document.querySelectorAll('.faq-item').forEach(i => i.classList.remove('open'));
 
-  /* Si estaba cerrado, abrirlo */
   if(!abierto){
     item.classList.add('open');
   }
@@ -1185,6 +1395,8 @@ document.addEventListener('keydown', (e)=>{
     cerrarMenu();
     cerrarModalServix();
     cerrarModalFAQ();
+    cerrarModalReset();
+    cerrarModalReset2();
   }
 });
 
