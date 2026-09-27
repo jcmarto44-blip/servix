@@ -586,6 +586,87 @@ table.tabla tbody tr:hover{background:var(--gris-bg);}
   color:var(--texto-secundario);
 }
 
+/* ====== CONTACTO ====== */
+.contacto-check{
+  display:flex;
+  align-items:center;
+  gap:10px;
+  padding:10px 12px;
+  border:1.5px solid var(--gris-borde);
+  border-radius:8px;
+  margin-bottom:8px;
+  transition:all .15s;
+}
+.contacto-check:hover{background:var(--gris-bg);}
+.contacto-check input[type="checkbox"]{
+  width:18px;
+  height:18px;
+  cursor:pointer;
+  accent-color:var(--azul-boton);
+  flex-shrink:0;
+}
+.contacto-check .icono{
+  color:var(--gris-icono);
+  font-size:18px;
+  width:22px;
+  text-align:center;
+}
+.contacto-check .texto{
+  flex:1;
+  font-weight:600;
+  font-size:13.5px;
+}
+.contacto-campo{
+  margin-top:0;
+  margin-bottom:14px;
+  display:none;
+}
+.contacto-campo.visible{display:block;}
+.contacto-campo input{
+  width:100%;
+  padding:10px 12px;
+  border:1.5px solid var(--gris-borde);
+  border-radius:8px;
+  font-size:14px;
+  font-family:'Inter',sans-serif;
+}
+.contacto-campo input:focus{
+  outline:none;
+  border-color:var(--azul-boton);
+}
+
+.contacto-selector label{
+  display:block;
+  font-size:13px;
+  font-weight:600;
+  margin-bottom:8px;
+  color:var(--texto-oscuro);
+}
+.contacto-selector .opcion{
+  display:flex;
+  align-items:center;
+  gap:10px;
+  padding:8px 12px;
+  border:1.5px solid var(--gris-borde);
+  border-radius:8px;
+  margin-bottom:6px;
+  cursor:pointer;
+  transition:all .15s;
+}
+.contacto-selector .opcion:hover{background:var(--gris-bg);}
+.contacto-selector .opcion.activo{
+  border-color:var(--azul-boton);
+  background:#f0f6ff;
+}
+.contacto-selector input[type="radio"]{
+  accent-color:var(--azul-boton);
+  cursor:pointer;
+}
+.contacto-selector .opcion .texto{
+  font-size:13.5px;
+  font-weight:600;
+}
+
 /* ====== VISTA PREVIA ====== */
 .wid-preview-sticky{
   position:sticky;
@@ -670,6 +751,36 @@ table.tabla tbody tr:hover{background:var(--gris-bg);}
   margin-left:auto;
   color:#fff;
 }
+.wid-mock-contacto{
+  margin-top:8px;
+  padding:8px;
+  background:#fff;
+  border-radius:8px;
+  border:1px solid #e5e7eb;
+  font-size:11.5px;
+  display:none;
+}
+.wid-mock-contacto.visible{display:block;}
+.wid-mock-contacto .msg{
+  color:#5b6773;
+  margin-bottom:6px;
+  line-height:1.4;
+}
+.wid-mock-contacto .btn-c{
+  display:block;
+  padding:6px 8px;
+  margin-bottom:4px;
+  border-radius:6px;
+  text-align:center;
+  font-weight:bold;
+  font-size:11px;
+  text-decoration:none;
+  color:#fff;
+}
+.wid-mock-contacto .btn-c.wa{background:#25D366;}
+.wid-mock-contacto .btn-c.tel{background:#2e6fd9;}
+.wid-mock-contacto .btn-c.em{background:#fff;color:#2e6fd9;border:1.5px solid #2e6fd9;}
+
 .wid-mock-input{
   display:flex;
   padding:8px;
@@ -1075,6 +1186,65 @@ table.tabla tbody tr:hover{background:var(--gris-bg);}
               </div>
             </div>
 
+            <!-- CONTACTO -->
+            <div class="card">
+              <h3 class="card-title">Cómo quieres ser contactado</h3>
+              <p style="color:var(--texto-secundario);font-size:13px;margin-bottom:12px;">
+                Activa los canales que quieras mostrar cuando el bot no sepa responder. Es opcional.
+              </p>
+
+              <div class="contacto-check">
+                <input type="checkbox" id="wid-activar-wa" onchange="toggleCampoContacto('wa'); actualizarPreview();">
+                <i class="bi bi-whatsapp icono"></i>
+                <span class="texto">WhatsApp</span>
+              </div>
+              <div class="contacto-campo" id="campo-wa">
+                <input type="text" id="wid-whatsapp-ventas" placeholder="Ej: 5215551234567 (con código de país)" oninput="actualizarPreview();">
+              </div>
+
+              <div class="contacto-check">
+                <input type="checkbox" id="wid-activar-tel" onchange="toggleCampoContacto('tel'); actualizarPreview();">
+                <i class="bi bi-telephone icono"></i>
+                <span class="texto">Teléfono</span>
+              </div>
+              <div class="contacto-campo" id="campo-tel">
+                <input type="text" id="wid-telefono-ventas" placeholder="Ej: 5551234567" oninput="actualizarPreview();">
+              </div>
+
+              <div class="contacto-check">
+                <input type="checkbox" id="wid-activar-email" onchange="toggleCampoContacto('email'); actualizarPreview();">
+                <i class="bi bi-envelope icono"></i>
+                <span class="texto">Email</span>
+              </div>
+              <div class="contacto-campo" id="campo-email">
+                <input type="text" id="wid-email-ventas" placeholder="Ej: ventas@minegocio.com" oninput="actualizarPreview();">
+              </div>
+
+              <div class="form-group" style="margin-top:14px;">
+                <label>Mensaje cuando no hay respuesta</label>
+                <input type="text" id="wid-mensaje-sin-resp" placeholder="No encontré esa info. Contáctanos directamente:" oninput="actualizarPreview();">
+              </div>
+
+              <div class="contacto-selector">
+                <label>Cuándo mostrar los botones de contacto</label>
+
+                <div class="opcion activo" id="opc-no-responde" onclick="seleccionarMostrar('no_responde')">
+                  <input type="radio" name="mostrar-contacto" value="no_responde" checked>
+                  <span class="texto">Solo cuando el bot no responde</span>
+                </div>
+
+                <div class="opcion" id="opc-siempre" onclick="seleccionarMostrar('siempre')">
+                  <input type="radio" name="mostrar-contacto" value="siempre">
+                  <span class="texto">Siempre visible</span>
+                </div>
+
+                <div class="opcion" id="opc-nunca" onclick="seleccionarMostrar('nunca')">
+                  <input type="radio" name="mostrar-contacto" value="nunca">
+                  <span class="texto">Nunca mostrar</span>
+                </div>
+              </div>
+            </div>
+
             <!-- GUARDAR -->
             <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:12px;">
               <button class="btn btn-primario" onclick="guardarPersonalizacion()">
@@ -1100,6 +1270,13 @@ table.tabla tbody tr:hover{background:var(--gris-bg);}
                   <div class="wid-mock-body">
                     <div class="wid-mock-msg bot" id="wid-mock-msg-bot">¡Hola! ¿En qué te ayudo?</div>
                     <div class="wid-mock-msg user" id="wid-mock-msg-user">Hola, tengo una duda</div>
+
+                    <div class="wid-mock-contacto" id="wid-mock-contacto">
+                      <div class="msg" id="wid-mock-contacto-msg">No encontré esa info. Contáctanos directamente:</div>
+                      <a class="btn-c wa" id="wid-mock-btn-wa" style="display:none;">WhatsApp</a>
+                      <a class="btn-c tel" id="wid-mock-btn-tel" style="display:none;">Llamar</a>
+                      <a class="btn-c em" id="wid-mock-btn-em" style="display:none;">Email</a>
+                    </div>
                   </div>
                   <div class="wid-mock-input">
                     <input type="text" placeholder="Escribe..." disabled>
@@ -1750,6 +1927,30 @@ function rellenarFormularioPersonalizar(cb){
 
   document.getElementById('wid-posicion').value = cb.posicion || 'derecha';
 
+  // Contacto
+  const wa = cb.whatsapp_ventas || '';
+  const tel = cb.telefono_ventas || '';
+  const em = cb.email_ventas || '';
+  const msgSinResp = cb.mensaje_sin_respuesta || '';
+  const mostrar = cb.mostrar_contacto || 'no_responde';
+
+  document.getElementById('wid-activar-wa').checked = !!wa;
+  document.getElementById('wid-whatsapp-ventas').value = wa;
+
+  document.getElementById('wid-activar-tel').checked = !!tel;
+  document.getElementById('wid-telefono-ventas').value = tel;
+
+  document.getElementById('wid-activar-email').checked = !!em;
+  document.getElementById('wid-email-ventas').value = em;
+
+  document.getElementById('wid-mensaje-sin-resp').value = msgSinResp;
+
+  toggleCampoContacto('wa');
+  toggleCampoContacto('tel');
+  toggleCampoContacto('email');
+
+  seleccionarMostrar(mostrar);
+
   // Logo
   const img = document.getElementById('wid-logo-img');
   const sin = document.getElementById('wid-logo-sin');
@@ -1769,6 +1970,31 @@ function rellenarFormularioPersonalizar(cb){
     btnEliminar.style.display = 'none';
     info.textContent = 'Sin logo. Sube uno desde tu computadora.';
   }
+
+  actualizarPreview();
+}
+
+function toggleCampoContacto(canal){
+  const checkbox = document.getElementById('wid-activar-' + canal);
+  const campo = document.getElementById('campo-' + canal);
+  if(!checkbox || !campo) return;
+
+  if(checkbox.checked){
+    campo.classList.add('visible');
+  } else {
+    campo.classList.remove('visible');
+  }
+}
+
+function seleccionarMostrar(valor){
+  document.querySelectorAll('input[name="mostrar-contacto"]').forEach(r=>{
+    r.checked = (r.value === valor);
+  });
+  document.querySelectorAll('.contacto-selector .opcion').forEach(op=>{
+    op.classList.remove('activo');
+  });
+  const el = document.getElementById('opc-' + (valor === 'no_responde' ? 'no-responde' : valor));
+  if(el) el.classList.add('activo');
 
   actualizarPreview();
 }
@@ -1819,6 +2045,29 @@ function actualizarPreview(){
   const posicion = document.getElementById('wid-posicion').value;
   mockBurbuja.style.right = posicion === 'derecha' ? '20px' : 'auto';
   mockBurbuja.style.left = posicion === 'izquierda' ? '20px' : 'auto';
+
+  // Contacto en preview
+  const contactoBlock = document.getElementById('wid-mock-contacto');
+  const waActivo = document.getElementById('wid-activar-wa').checked && document.getElementById('wid-whatsapp-ventas').value.trim();
+  const telActivo = document.getElementById('wid-activar-tel').checked && document.getElementById('wid-telefono-ventas').value.trim();
+  const emActivo = document.getElementById('wid-activar-email').checked && document.getElementById('wid-email-ventas').value.trim();
+
+  const msgSinResp = document.getElementById('wid-mensaje-sin-resp').value.trim() || 'No encontré esa info. Contáctanos directamente:';
+  document.getElementById('wid-mock-contacto-msg').textContent = msgSinResp;
+
+  const btnWa = document.getElementById('wid-mock-btn-wa');
+  const btnTel = document.getElementById('wid-mock-btn-tel');
+  const btnEm = document.getElementById('wid-mock-btn-em');
+
+  btnWa.style.display = waActivo ? 'block' : 'none';
+  btnTel.style.display = telActivo ? 'block' : 'none';
+  btnEm.style.display = emActivo ? 'block' : 'none';
+
+  if(waActivo || telActivo || emActivo){
+    contactoBlock.classList.add('visible');
+  } else {
+    contactoBlock.classList.remove('visible');
+  }
 }
 
 // Subida automática de logo al seleccionar
@@ -1930,6 +2179,12 @@ async function guardarPersonalizacion(){
   exito.classList.remove('visible');
   error.classList.remove('visible');
 
+  // Obtener valor del radio seleccionado
+  let mostrarContacto = 'no_responde';
+  document.querySelectorAll('input[name="mostrar-contacto"]').forEach(r=>{
+    if(r.checked) mostrarContacto = r.value;
+  });
+
   const payload = {
     color_burbuja: document.getElementById('wid-color-burbuja').value,
     color_header: document.getElementById('wid-color-header').value,
@@ -1939,7 +2194,20 @@ async function guardarPersonalizacion(){
     mensaje_bienvenida: document.getElementById('wid-msg-bienvenida').value.trim(),
     mensaje_despedida: document.getElementById('wid-msg-despedida').value.trim(),
     url_privacidad: document.getElementById('wid-url-privacidad').value.trim() || '/privacidad',
-    posicion: document.getElementById('wid-posicion').value
+    posicion: document.getElementById('wid-posicion').value,
+
+    // Contacto
+    whatsapp_ventas: document.getElementById('wid-activar-wa').checked
+      ? document.getElementById('wid-whatsapp-ventas').value.trim()
+      : '',
+    telefono_ventas: document.getElementById('wid-activar-tel').checked
+      ? document.getElementById('wid-telefono-ventas').value.trim()
+      : '',
+    email_ventas: document.getElementById('wid-activar-email').checked
+      ? document.getElementById('wid-email-ventas').value.trim()
+      : '',
+    mensaje_sin_respuesta: document.getElementById('wid-mensaje-sin-resp').value.trim(),
+    mostrar_contacto: mostrarContacto
   };
 
   const token = localStorage.getItem('servix_token');
