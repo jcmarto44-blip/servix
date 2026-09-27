@@ -23,7 +23,7 @@ import requests
 # CONFIGURACIÓN INICIAL
 # =====================================================
 
-app = FastAPI(title="SERVIX API", version="1.1.0")
+app = FastAPI(title="SERVIX API", version="1.2.0")
 
 app.add_middleware(
     CORSMiddleware,
@@ -116,6 +116,11 @@ def inicializar_base_datos():
             ("color_msg_user", "VARCHAR(20) DEFAULT '#2e6fd9'"),
             ("mensaje_despedida", "TEXT DEFAULT ''"),
             ("url_privacidad", "VARCHAR(500) DEFAULT '/privacidad'"),
+            ("whatsapp_ventas", "VARCHAR(50) DEFAULT ''"),
+            ("telefono_ventas", "VARCHAR(50) DEFAULT ''"),
+            ("email_ventas", "VARCHAR(200) DEFAULT ''"),
+            ("mensaje_sin_respuesta", "TEXT DEFAULT ''"),
+            ("mostrar_contacto", "VARCHAR(30) DEFAULT 'no_responde'"),
         ]
 
         for nombre, tipo in columnas:
@@ -163,7 +168,6 @@ def generar_token_chatbot() -> str:
     return secrets.token_urlsafe(16)
 
 def generar_password_temporal() -> str:
-    """Genera una contraseña temporal tipo 'servixA7B3C9' (sin guión)."""
     caracteres = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"
     sufijo = "".join(secrets.choice(caracteres) for _ in range(6))
     return f"servix{sufijo}"
@@ -184,7 +188,6 @@ def plan_permite_ia(plan: Optional[str]) -> bool:
     return plan in ('pro', 'business')
 
 def registrar_bitacora(cursor, cliente_id: int, accion: str, detalle: str = ""):
-    """Registra un evento en la bitácora."""
     try:
         cursor.execute("""
             INSERT INTO bitacora (cliente_id, accion, detalle)
@@ -295,6 +298,11 @@ class ChatbotUpdate(BaseModel):
     color_msg_user: Optional[str] = None
     mensaje_despedida: Optional[str] = None
     url_privacidad: Optional[str] = None
+    whatsapp_ventas: Optional[str] = None
+    telefono_ventas: Optional[str] = None
+    email_ventas: Optional[str] = None
+    mensaje_sin_respuesta: Optional[str] = None
+    mostrar_contacto: Optional[str] = None
 
 class ReglaCreate(BaseModel):
     chatbot_id: int
@@ -346,7 +354,7 @@ class SolicitudResetRequest(BaseModel):
 
 @app.get("/")
 def inicio():
-    return {"mensaje": "SERVIX API funcionando", "version": "1.1.0", "estado": "ok"}
+    return {"mensaje": "SERVIX API funcionando", "version": "1.2.0", "estado": "ok"}
 
 @app.get("/health")
 def health():
@@ -462,7 +470,6 @@ def login(data: LoginRequest):
             WHERE id = %s
         """, (token, token_expiracion, cliente['id']))
 
-        # Bitácora
         if cliente['email'] != 'admin@servix.com':
             registrar_bitacora(cursor, cliente['id'], "login", "Inició sesión")
 
@@ -503,7 +510,6 @@ def logout(cliente = Depends(get_current_cliente)):
         conn = get_connection()
         cursor = conn.cursor()
 
-        # Bitácora
         if cliente['email'] != 'admin@servix.com':
             registrar_bitacora(cursor, cliente['id'], "logout", "Cerró sesión")
 
@@ -527,13 +533,11 @@ def obtener_me(cliente = Depends(get_current_cliente)):
     return {"success": True, "cliente": cliente}
 
 # =====================================================
-# SOLICITUD DE RESET (PÚBLICO - CLIENTE DESDE LANDING)
+# SOLICITUD DE RESET (PÚBLICO)
 # =====================================================
 
 @app.post("/api/solicitar-reset")
 def solicitar_reset(data: SolicitudResetRequest):
-    """Endpoint público: el cliente (sin login) pide reset de contraseña.
-    Guarda nombre + teléfono para que el admin se contacte."""
     if not data.nombre_contacto or len(data.nombre_contacto.strip()) < 2:
         raise HTTPException(status_code=400, detail="Nombre de contacto inválido")
     if not data.telefono_contacto or len(data.telefono_contacto.strip()) < 6:
@@ -668,6 +672,8 @@ def listar_chatbots(cliente = Depends(get_current_cliente)):
                    color_primario, color_texto, color_burbuja, color_header,
                    color_texto_header, color_msg_bot, color_msg_user,
                    logo_url, url_privacidad,
+                   whatsapp_ventas, telefono_ventas, email_ventas,
+                   mensaje_sin_respuesta, mostrar_contacto,
                    posicion, modo, token, activo, fecha_creacion
             FROM chatbots
             WHERE cliente_id = %s
@@ -731,7 +737,6 @@ def crear_chatbot(data: ChatbotCreate, cliente = Depends(get_current_cliente)):
 
         nuevo = cursor.fetchone()
 
-        # Bitácora
         registrar_bitacora(cursor, cliente['id'], "crear_chatbot", f"Creó chatbot '{nuevo[1]}'")
 
         conn.commit()
@@ -761,6 +766,8 @@ def obtener_chatbot(chatbot_id: int, cliente = Depends(get_current_cliente)):
                    color_primario, color_texto, color_burbuja, color_header,
                    color_texto_header, color_msg_bot, color_msg_user,
                    logo_url, url_privacidad,
+                   whatsapp_ventas, telefono_ventas, email_ventas,
+                   mensaje_sin_respuesta, mostrar_contacto,
                    posicion, modo, token, activo, fecha_creacion
             FROM chatbots
             WHERE id = %s AND cliente_id = %s
@@ -798,7 +805,8 @@ def actualizar_chatbot(chatbot_id: int, data: ChatbotUpdate, cliente = Depends(g
         campos_crudos = [
             'color_primario', 'color_texto', 'modo', 'posicion',
             'color_burbuja', 'color_header', 'color_texto_header',
-            'color_msg_bot', 'color_msg_user', 'url_privacidad'
+            'color_msg_bot', 'color_msg_user', 'url_privacidad',
+            'whatsapp_ventas', 'telefono_ventas', 'email_ventas', 'mostrar_contacto'
         ]
 
         campos = []
@@ -823,7 +831,6 @@ def actualizar_chatbot(chatbot_id: int, data: ChatbotUpdate, cliente = Depends(g
 
         cursor.execute(f"UPDATE chatbots SET {', '.join(campos)} WHERE id = %s AND cliente_id = %s", valores)
 
-        # Bitácora
         registrar_bitacora(cursor, cliente['id'], "editar_chatbot", f"Editó chatbot id={chatbot_id}")
 
         conn.commit()
@@ -848,7 +855,6 @@ def eliminar_chatbot(chatbot_id: int, cliente = Depends(get_current_cliente)):
         if cursor.rowcount == 0:
             raise HTTPException(status_code=404, detail="Chatbot no encontrado")
 
-        # Bitácora
         registrar_bitacora(cursor, cliente['id'], "eliminar_chatbot", f"Eliminó chatbot id={chatbot_id}")
 
         conn.commit()
@@ -889,7 +895,6 @@ async def subir_logo_chatbot(chatbot_id: int, file: UploadFile = File(...), clie
 
         cursor.execute("UPDATE chatbots SET logo_url = %s WHERE id = %s", (url, chatbot_id))
 
-        # Bitácora
         registrar_bitacora(cursor, cliente['id'], "subir_logo", f"Subió logo a chatbot id={chatbot_id}")
 
         conn.commit()
@@ -922,7 +927,6 @@ def eliminar_logo_chatbot(chatbot_id: int, cliente = Depends(get_current_cliente
 
         cursor.execute("UPDATE chatbots SET logo_url = NULL WHERE id = %s", (chatbot_id,))
 
-        # Bitácora
         registrar_bitacora(cursor, cliente['id'], "eliminar_logo", f"Eliminó logo de chatbot id={chatbot_id}")
 
         conn.commit()
@@ -1009,7 +1013,6 @@ def crear_regla(data: ReglaCreate, cliente = Depends(get_current_cliente)):
 
         nueva_id = cursor.fetchone()[0]
 
-        # Bitácora
         registrar_bitacora(cursor, cliente['id'], "crear_regla", f"Creó regla id={nueva_id}")
 
         conn.commit()
@@ -1054,7 +1057,6 @@ def actualizar_regla(regla_id: int, data: ReglaUpdate, cliente = Depends(get_cur
         valores.append(regla_id)
         cursor.execute(f"UPDATE reglas SET {', '.join(campos)} WHERE id = %s", valores)
 
-        # Bitácora
         registrar_bitacora(cursor, cliente['id'], "editar_regla", f"Editó regla id={regla_id}")
 
         conn.commit()
@@ -1078,7 +1080,6 @@ def eliminar_regla(regla_id: int, cliente = Depends(get_current_cliente)):
         if cursor.rowcount == 0:
             raise HTTPException(status_code=404, detail="Regla no encontrada")
 
-        # Bitácora
         registrar_bitacora(cursor, cliente['id'], "eliminar_regla", f"Eliminó regla id={regla_id}")
 
         conn.commit()
@@ -1254,7 +1255,6 @@ def admin_resetear_password(cliente_id: int, data: PasswordResetRequest, cliente
         nuevo_hash = hash_password(nueva_password)
         cursor.execute("UPDATE clientes SET password_hash = %s WHERE id = %s", (nuevo_hash, cliente_id))
 
-        # Bitácora
         registrar_bitacora(cursor, cliente_id, "reset_password", f"Admin reseteó contraseña (modo {modo})")
 
         conn.commit()
@@ -1593,6 +1593,8 @@ def obtener_widget(token: str):
                    color_primario, color_texto, color_burbuja, color_header,
                    color_texto_header, color_msg_bot, color_msg_user,
                    logo_url, url_privacidad,
+                   whatsapp_ventas, telefono_ventas, email_ventas,
+                   mensaje_sin_respuesta, mostrar_contacto,
                    posicion, modo, activo
             FROM chatbots
             WHERE token = %s
@@ -1607,7 +1609,7 @@ def obtener_widget(token: str):
         if conn:
             conn.close()
 
-# ---- Widget JS embebible v2 ----
+# ---- Widget JS embebible v3 ----
 
 WIDGET_JS_TEMPLATE = r"""
 (function () {
@@ -1646,6 +1648,14 @@ WIDGET_JS_TEMPLATE = r"""
     var logo = config.logo_url || "";
     var urlPrivacidad = config.url_privacidad || "/privacidad";
     var msgDespedida = config.mensaje_despedida || "";
+
+    var waVentas = config.whatsapp_ventas || "";
+    var telVentas = config.telefono_ventas || "";
+    var emailVentas = config.email_ventas || "";
+    var msgSinResp = config.mensaje_sin_respuesta || "No tengo esa info, pero puedes contactar a un asesor:";
+    var mostrarContacto = config.mostrar_contacto || "no_responde";
+
+    var hayContacto = (waVentas || telVentas || emailVentas);
 
     var bubbleContent = '<svg width="26" height="26" viewBox="0 0 24 24" fill="#ffffff">' +
       '<path d="M12 2C6.48 2 2 6.03 2 11c0 2.4 1.05 4.57 2.77 6.15L4 22l5.05-1.35C10 20.86 11 21 12 21c5.52 0 10-4.03 10-9s-4.48-10-10-10z"/></svg>';
@@ -1715,6 +1725,11 @@ WIDGET_JS_TEMPLATE = r"""
 
     addMessage(config.mensaje_bienvenida || "¡Hola! ¿En qué te ayudo?", "bot");
 
+    // Si mostrarContacto === "siempre" y hay datos, mostrarlos al inicio
+    if (mostrarContacto === "siempre" && hayContacto) {
+      setTimeout(function() { agregarBloqueContacto(); }, 400);
+    }
+
     bubble.onclick = function () {
       isOpen = !isOpen;
       win.style.display = isOpen ? "flex" : "none";
@@ -1763,6 +1778,48 @@ WIDGET_JS_TEMPLATE = r"""
       body.scrollTop = body.scrollHeight;
     }
 
+    function agregarBloqueContacto() {
+      if (!hayContacto) return;
+
+      var wrapper = document.createElement("div");
+      wrapper.style.cssText = "margin:8px 0 12px;max-width:90%;align-self:flex-start;";
+
+      var titulo = document.createElement("div");
+      titulo.style.cssText = "font-size:13px;color:#5b6773;margin-bottom:8px;line-height:1.4;";
+      titulo.textContent = msgSinResp;
+      wrapper.appendChild(titulo);
+
+      if (waVentas) {
+        var aWa = document.createElement("a");
+        var waClean = waVentas.replace(/[^0-9]/g, "");
+        aWa.href = "https://wa.me/" + waClean;
+        aWa.target = "_blank";
+        aWa.style.cssText = "display:block;width:100%;text-align:center;padding:10px 14px;margin-bottom:6px;border-radius:8px;background:#25D366;color:#fff;text-decoration:none;font-weight:bold;font-size:13.5px;";
+        aWa.textContent = "WhatsApp: " + waVentas;
+        wrapper.appendChild(aWa);
+      }
+
+      if (telVentas) {
+        var aTel = document.createElement("a");
+        var telClean = telVentas.replace(/[^0-9+]/g, "");
+        aTel.href = "tel:" + telClean;
+        aTel.style.cssText = "display:block;width:100%;text-align:center;padding:10px 14px;margin-bottom:6px;border-radius:8px;background:" + colorHeader + ";color:" + colorTextoHeader + ";text-decoration:none;font-weight:bold;font-size:13.5px;";
+        aTel.textContent = "Llamar: " + telVentas;
+        wrapper.appendChild(aTel);
+      }
+
+      if (emailVentas) {
+        var aEm = document.createElement("a");
+        aEm.href = "mailto:" + emailVentas;
+        aEm.style.cssText = "display:block;width:100%;text-align:center;padding:10px 14px;margin-bottom:6px;border-radius:8px;background:#fff;color:" + colorHeader + ";border:1.5px solid " + colorHeader + ";text-decoration:none;font-weight:bold;font-size:13.5px;";
+        aEm.textContent = "Email: " + emailVentas;
+        wrapper.appendChild(aEm);
+      }
+
+      body.appendChild(wrapper);
+      body.scrollTop = body.scrollHeight;
+    }
+
     function send() {
       var texto2 = input.value.trim();
       if (!texto2) return;
@@ -1779,6 +1836,14 @@ WIDGET_JS_TEMPLATE = r"""
         .then(function (data) {
           sessionId = data.sesion_id;
           addMessage(data.respuesta || "...", "bot");
+
+          // Si el bot NO tiene respuesta y hay contacto configurado
+          if (mostrarContacto === "no_responde" && hayContacto) {
+            var textoResp = (data.respuesta || "").toLowerCase();
+            if (textoResp.indexOf("no tengo") !== -1 || textoResp.indexOf("no encontré") !== -1 || textoResp.indexOf("no pude") !== -1 || textoResp.indexOf("no tengo una respuesta") !== -1) {
+              agregarBloqueContacto();
+            }
+          }
         })
         .catch(function () {
           addMessage("Error de conexión. Intenta de nuevo.", "bot");
