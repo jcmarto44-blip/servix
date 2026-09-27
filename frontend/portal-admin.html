@@ -110,6 +110,7 @@ h1,h2,h3,h4{font-family:'Poppins',sans-serif;font-weight:600;}
   border-left:3px solid transparent;
   transition:all .15s;
   user-select:none;
+  position:relative;
 }
 .sidebar .menu-item:hover{background:var(--gris-bg);}
 .sidebar .menu-item.active{
@@ -129,6 +130,17 @@ h1,h2,h3,h4{font-family:'Poppins',sans-serif;font-weight:600;}
   height:1px;
   background:var(--gris-borde);
   margin:10px 20px;
+}
+.sidebar .contador{
+  background:var(--rojo);
+  color:#fff;
+  font-size:10.5px;
+  font-weight:700;
+  padding:2px 7px;
+  border-radius:10px;
+  margin-left:auto;
+  min-width:22px;
+  text-align:center;
 }
 
 .contenido{
@@ -253,6 +265,8 @@ table.tabla tbody tr:hover{background:var(--gris-bg);}
 .badge-activo{background:var(--azul-boton);}
 .badge-suspendido{background:var(--rojo);}
 .badge-cancelado{background:#6c757d;}
+.badge-pendiente{background:var(--rojo);}
+.badge-atendida{background:var(--verde);}
 
 .modal-overlay{
   position:fixed;
@@ -358,7 +372,8 @@ table.tabla tbody tr:hover{background:var(--gris-bg);}
   font-size:14px;
 }
 .form-group input,
-.form-group textarea{
+.form-group textarea,
+.form-group select{
   width:100%;
   padding:10px 12px;
   border:1.5px solid var(--gris-borde);
@@ -369,7 +384,8 @@ table.tabla tbody tr:hover{background:var(--gris-bg);}
   background:#fff;
 }
 .form-group input:focus,
-.form-group textarea:focus{
+.form-group textarea:focus,
+.form-group select:focus{
   outline:none;
   border-color:var(--azul-boton);
 }
@@ -458,6 +474,20 @@ table.tabla tbody tr:hover{background:var(--gris-bg);}
   margin-top:12px;
 }
 
+/* ===== BITÁCORA ===== */
+.bitacora-tabla{
+  font-size:13px;
+}
+.bitacora-accion{
+  display:inline-block;
+  padding:3px 8px;
+  border-radius:6px;
+  font-size:11.5px;
+  font-weight:600;
+  background:var(--gris-bg);
+  color:var(--texto-secundario);
+  border:1px solid var(--gris-borde);
+}
 @media(max-width:900px){
   .grid-4,.grid-3{grid-template-columns:1fr 1fr;}
 }
@@ -501,6 +531,13 @@ table.tabla tbody tr:hover{background:var(--gris-bg);}
     </div>
     <div class="menu-item" data-seccion="clientes" onclick="navegarA('clientes')">
       <i class="bi bi-people"></i> Clientes
+    </div>
+    <div class="menu-item" data-seccion="solicitudes" onclick="navegarA('solicitudes')">
+      <i class="bi bi-bell"></i> Solicitudes
+      <span class="contador" id="contador-solicitudes" style="display:none;">0</span>
+    </div>
+    <div class="menu-item" data-seccion="bitacora" onclick="navegarA('bitacora')">
+      <i class="bi bi-journal-text"></i> Bitácora
     </div>
     <div class="menu-item" data-seccion="facturas" onclick="navegarA('facturas')">
       <i class="bi bi-receipt"></i> Facturas
@@ -556,14 +593,11 @@ table.tabla tbody tr:hover{background:var(--gris-bg);}
           <button class="btn btn-primario" onclick="navegarA('clientes')">
             <i class="bi bi-people"></i> Ver clientes
           </button>
-          <button class="btn btn-secundario" onclick="navegarA('facturas')">
-            <i class="bi bi-receipt"></i> Ver facturas
+          <button class="btn btn-secundario" onclick="navegarA('solicitudes')">
+            <i class="bi bi-bell"></i> Ver solicitudes
           </button>
-          <button class="btn btn-secundario" onclick="navegarA('contratacion')">
-            <i class="bi bi-credit-card"></i> Datos de contratación
-          </button>
-          <button class="btn btn-secundario" onclick="navegarA('reportes')">
-            <i class="bi bi-graph-up"></i> Ver reportes
+          <button class="btn btn-secundario" onclick="navegarA('bitacora')">
+            <i class="bi bi-journal-text"></i> Ver bitácora
           </button>
         </div>
       </div>
@@ -590,6 +624,45 @@ table.tabla tbody tr:hover{background:var(--gris-bg);}
       </div>
 
       <div id="lista-clientes"></div>
+    </section>
+
+    <section class="seccion" id="seccion-solicitudes">
+      <h1 class="page-title">Solicitudes de Reset</h1>
+      <p class="page-sub">Clientes que olvidaron su contraseña y piden ayuda.</p>
+
+      <div class="card" style="padding:14px 18px;">
+        <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;">
+          <button class="btn btn-secundario btn-chico" onclick="cargarSolicitudes()">
+            <i class="bi bi-arrow-clockwise"></i> Recargar
+          </button>
+        </div>
+      </div>
+
+      <div id="lista-solicitudes"></div>
+    </section>
+
+    <section class="seccion" id="seccion-bitacora">
+      <h1 class="page-title">Bitácora de Actividad</h1>
+      <p class="page-sub">Historial completo de acciones de cada cliente.</p>
+
+      <div class="card">
+        <div class="grid-2">
+          <div class="form-group">
+            <label>Selecciona un cliente</label>
+            <select id="select-bitacora-cliente">
+              <option value="">— Selecciona un cliente —</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>&nbsp;</label>
+            <button class="btn btn-primario" onclick="verBitacoraCliente()">
+              <i class="bi bi-eye"></i> Ver
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div id="bitacora-contenedor"></div>
     </section>
 
     <section class="seccion" id="seccion-facturas">
@@ -736,6 +809,7 @@ let clienteSeleccionado = null;
     document.getElementById('header-nombre').textContent = admin.nombre_completo || 'Admin';
 
     await cargarClientes();
+    await actualizarContadorSolicitudes();
 
   }catch(err){
     console.error(err);
@@ -757,6 +831,8 @@ function navegarA(seccion){
   if(seccion === 'clientes') cargarClientes();
   if(seccion === 'reportes') cargarReportes();
   if(seccion === 'contratacion') cargarContratacion();
+  if(seccion === 'solicitudes') cargarSolicitudes();
+  if(seccion === 'bitacora') llenarSelectBitacora();
 }
 
 async function cargarClientes(){
@@ -792,6 +868,196 @@ async function cargarClientes(){
   }
 }
 
+/* =====================================================
+   CONTADOR Y LISTA DE SOLICITUDES
+   ===================================================== */
+
+async function actualizarContadorSolicitudes(){
+  const token = localStorage.getItem('servix_token');
+  try{
+    const resp = await fetch(`${API_URL}/api/admin/solicitudes-reset`, {
+      headers: { 'Authorization': `Bearer ${token}` }
+    });
+    if(!resp.ok) return;
+    const data = await resp.json();
+    const solicitudes = data.solicitudes || [];
+    const pendientes = solicitudes.filter(s => !s.atendida).length;
+
+    const el = document.getElementById('contador-solicitudes');
+    if(pendientes > 0){
+      el.textContent = pendientes;
+      el.style.display = 'inline-block';
+    } else {
+      el.style.display = 'none';
+    }
+  }catch(e){
+    console.error(e);
+  }
+}
+
+async function cargarSolicitudes(){
+  const token = localStorage.getItem('servix_token');
+  const cont = document.getElementById('lista-solicitudes');
+
+  cont.innerHTML = '<div class="card"><p style="color:var(--texto-secundario);">Cargando...</p></div>';
+
+  try{
+    const resp = await fetch(`${API_URL}/api/admin/solicitudes-reset`, {
+      headers: { 'Authorization': `Bearer ${token}` }
+    });
+
+    if(!resp.ok){
+      cont.innerHTML = '<div class="card"><p style="color:#a72e21;">Error al cargar solicitudes.</p></div>';
+      return;
+    }
+
+    const data = await resp.json();
+    const solicitudes = data.solicitudes || [];
+
+    if(solicitudes.length === 0){
+      cont.innerHTML = '<div class="card"><p style="color:var(--texto-secundario);">No hay solicitudes de reset por ahora.</p></div>';
+      return;
+    }
+
+    cont.innerHTML = `
+      <div class="tabla-wrap">
+        <table class="tabla">
+          <thead>
+            <tr>
+              <th>Nombre</th>
+              <th>Teléfono</th>
+              <th>Fecha</th>
+              <th>Estado</th>
+              <th>Acciones</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${solicitudes.map(s => `
+              <tr>
+                <td><b>${s.nombre_contacto || '—'}</b></td>
+                <td>${s.telefono_contacto || '—'}</td>
+                <td>${s.fecha_solicitud ? new Date(s.fecha_solicitud).toLocaleString('es-MX') : '—'}</td>
+                <td>${s.atendida ? '<span class="badge-estado badge-atendida">✅ ATENDIDA</span>' : '<span class="badge-estado badge-pendiente">🔴 PENDIENTE</span>'}</td>
+                <td>
+                  ${!s.atendida ? `
+                    <button class="btn btn-verde btn-chico" onclick="atenderSolicitud(${s.id})">
+                      <i class="bi bi-check-lg"></i> Atender
+                    </button>
+                  ` : `<small style="color:var(--texto-secundario);">${s.fecha_atendida ? new Date(s.fecha_atendida).toLocaleString('es-MX') : ''}</small>`}
+                </td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+      </div>
+    `;
+  }catch(e){
+    console.error(e);
+    cont.innerHTML = '<div class="card"><p style="color:#a72e21;">Error de conexión.</p></div>';
+  }
+}
+
+async function atenderSolicitud(id){
+  if(!confirm('¿Marcar esta solicitud como atendida?')) return;
+
+  const token = localStorage.getItem('servix_token');
+  try{
+    const resp = await fetch(`${API_URL}/api/admin/solicitudes-reset/${id}/atender`, {
+      method: 'PUT',
+      headers: { 'Authorization': `Bearer ${token}` }
+    });
+
+    if(resp.ok){
+      await cargarSolicitudes();
+      await actualizarContadorSolicitudes();
+    } else {
+      alert('No se pudo marcar como atendida.');
+    }
+  }catch(e){
+    console.error(e);
+    alert('Error de conexión.');
+  }
+}
+
+/* =====================================================
+   BITÁCORA
+   ===================================================== */
+
+function llenarSelectBitacora(){
+  const select = document.getElementById('select-bitacora-cliente');
+  if(!select) return;
+
+  const valorPrevio = select.value;
+  select.innerHTML = '<option value="">— Selecciona un cliente —</option>' +
+    clientes.map(c => `<option value="${c.id}">${c.nombre_completo} (${c.email})</option>`).join('');
+
+  if(valorPrevio) select.value = valorPrevio;
+}
+
+async function verBitacoraCliente(){
+  const clienteId = document.getElementById('select-bitacora-cliente').value;
+  const cont = document.getElementById('bitacora-contenedor');
+
+  if(!clienteId){
+    alert('Selecciona un cliente primero');
+    return;
+  }
+
+  cont.innerHTML = '<div class="card"><p style="color:var(--texto-secundario);">Cargando bitácora...</p></div>';
+
+  const token = localStorage.getItem('servix_token');
+  try{
+    const resp = await fetch(`${API_URL}/api/admin/bitacora/${clienteId}`, {
+      headers: { 'Authorization': `Bearer ${token}` }
+    });
+
+    if(!resp.ok){
+      cont.innerHTML = '<div class="card"><p style="color:#a72e21;">Error al cargar la bitácora.</p></div>';
+      return;
+    }
+
+    const data = await resp.json();
+    const eventos = data.bitacora || [];
+
+    if(eventos.length === 0){
+      cont.innerHTML = '<div class="card"><p style="color:var(--texto-secundario);">Este cliente aún no tiene actividad registrada.</p></div>';
+      return;
+    }
+
+    const cliente = clientes.find(c => c.id == clienteId);
+    const nombre = cliente ? cliente.nombre_completo : 'Cliente';
+
+    cont.innerHTML = `
+      <div class="card">
+        <h3 class="card-title">Bitácora de ${nombre}</h3>
+        <div class="tabla-wrap" style="margin-top:12px;">
+          <table class="tabla bitacora-tabla">
+            <thead>
+              <tr>
+                <th>Fecha y hora</th>
+                <th>Acción</th>
+                <th>Detalle</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${eventos.map(e => `
+                <tr>
+                  <td>${e.fecha ? new Date(e.fecha).toLocaleString('es-MX') : '—'}</td>
+                  <td><span class="bitacora-accion">${e.accion || '—'}</span></td>
+                  <td>${e.detalle || '—'}</td>
+                </tr>
+              `).join('')}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    `;
+  }catch(e){
+    console.error(e);
+    cont.innerHTML = '<div class="card"><p style="color:#a72e21;">Error de conexión.</p></div>';
+  }
+}
+
 function actualizarMetricas(){
   const total = clientes.length;
   const activos = clientes.filter(c => c.estado === 'activo').length;
@@ -820,9 +1086,6 @@ function renderizarClientes(){
       <div class="card">
         <p class="aviso-vacio">
           Todavía no hay ningún cliente registrado (aparte de tu cuenta de administrador).
-          Los botones de <b>Activar / Suspender</b> aparecen en esta tabla una vez que exista
-          al menos un cliente — regístrate con otro correo desde la página principal
-          (botón <code>REGISTRARSE GRATIS</code>) para ver el flujo completo aquí.
         </p>
       </div>
     `;
@@ -1006,7 +1269,6 @@ async function resetearPasswordCliente(id){
     }
     payload.password = pass;
   }
-  // Si es automática, no mandamos password → el backend la genera
 
   const confirmacion = confirm(
     modoManual
@@ -1041,7 +1303,6 @@ async function resetearPasswordCliente(id){
       `⚠️ Cópiala y mándasela al cliente. No se volverá a mostrar.`
     );
 
-    // Limpiar el campo si era manual
     if(inputManual) inputManual.value = '';
 
   }catch(err){
